@@ -1,3 +1,3 @@
 import { PagedScroll } from './PagedScroll.js';
 
-export { PagedScroll };
+export { PagedScroll as default };

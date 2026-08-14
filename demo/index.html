@@ -69,6 +69,7 @@
     /* Panel / section layout — NO position: relative here; it breaks GSAP pinning. */
     .panel {
       min-height: 100vh;
+      min-height: 100dvh;
       background: var(--paper);
       border-bottom: 2px solid var(--rule);
     }
@@ -192,6 +193,7 @@
       flex-direction: column;
       justify-content: center;
       min-height: 40vh;
+      min-height: 40dvh;
       max-width: 60ch;
       text-align: center;
     }
@@ -409,14 +411,22 @@
     </main>
   </section>
 
-  <script type="module">
-    import { PagedScroll } from '../src/index.js';
-
-    window.scroller = new PagedScroll({
-      sections: '.panel',
-      headerSelector: '.header',
-      mainSelector: '.main'
-    }).init();
+  <script src="/node_modules/gsap/dist/gsap.min.js"></script>
+  <script src="/node_modules/gsap/dist/ScrollTrigger.min.js"></script>
+  <script src="../dist/paged-scroll.umd.cjs"></script>
+  <script>
+    function initScroller() {
+      if (typeof window.gsap === 'undefined' || typeof window.ScrollTrigger === 'undefined' || typeof window.PagedScroll === 'undefined') {
+        setTimeout(initScroller, 50);
+        return;
+      }
+      window.scroller = new PagedScroll({
+        sections: '.panel',
+        headerSelector: '.header',
+        mainSelector: '.main'
+      }).init();
+    }
+    initScroller();
   </script>
 </body>
 </html>

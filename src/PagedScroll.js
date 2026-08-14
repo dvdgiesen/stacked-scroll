@@ -1,5 +1,5 @@
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import gsap from 'gsap';
+import ScrollTrigger from 'gsap/ScrollTrigger';
 
 /**
  * PagedScroll — a hardened, framework-agnostic library for the
@@ -36,6 +36,7 @@ export class PagedScroll {
 
     this._onLoad = this._handleLoad.bind(this);
     this._onResize = this._handleResize.bind(this);
+    this._onOrientationChange = this._handleOrientationChange.bind(this);
 
     gsap.registerPlugin(ScrollTrigger);
   }
@@ -85,7 +86,7 @@ export class PagedScroll {
 
     window.scrollTo({
       top: Math.max(0, docTop - headerOffset),
-      behavior: options.behavior ?? this.config.scrollBehavior
+      behavior: this._prefersReducedMotion() ? 'auto' : (options.behavior ?? this.config.scrollBehavior)
     });
   }
 
@@ -103,6 +104,7 @@ export class PagedScroll {
   destroy() {
     window.removeEventListener('load', this._onLoad);
     window.removeEventListener('resize', this._onResize);
+    window.removeEventListener('orientationchange', this._onOrientationChange);
     clearTimeout(this.resizeTimer);
 
     this.triggers.forEach((trigger) => trigger.kill());
@@ -162,14 +164,14 @@ export class PagedScroll {
   _computeStart(section) {
     // Short panels pin at the top immediately; tall panels pin only after
     // their own content has been fully scrolled through.
-    return section.offsetHeight < window.innerHeight ? 'top top' : 'bottom bottom';
+    return section.offsetHeight < this._getViewportHeight() ? 'top top' : 'bottom bottom';
   }
 
   _updateSpacer() {
     if (!this.spacer || this.sections.length === 0) return;
 
     const lastSection = this.sections[this.sections.length - 1];
-    const shortfall = window.innerHeight - lastSection.offsetHeight;
+    const shortfall = this._getViewportHeight() - lastSection.offsetHeight;
 
     this.spacer.style.height = (shortfall > 0 ? shortfall : 0) + 'px';
   }
@@ -177,6 +179,7 @@ export class PagedScroll {
   _attachListeners() {
     window.addEventListener('load', this._onLoad);
     window.addEventListener('resize', this._onResize);
+    window.addEventListener('orientationchange', this._onOrientationChange);
   }
 
   _handleLoad() {
@@ -190,6 +193,25 @@ export class PagedScroll {
       this._updateSpacer();
       ScrollTrigger.refresh();
     }, this.config.resizeDebounceMs);
+  }
+
+  _handleOrientationChange() {
+    // visualViewport may not report the final size immediately after a
+    // device rotation; defer the recalculation so the spacer stays correct.
+    setTimeout(() => {
+      this._updateSpacer();
+      ScrollTrigger.refresh();
+    }, 100);
+  }
+
+  _getViewportHeight() {
+    // visualViewport gives the stable viewport size on mobile even when the
+    // URL bar collapses/expands. Fallback to innerHeight for older browsers.
+    return window.visualViewport?.height ?? window.innerHeight;
+  }
+
+  _prefersReducedMotion() {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 
   _resolveTargetSection(target) {
