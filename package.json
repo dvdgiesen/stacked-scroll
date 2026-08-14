@@ -1,0 +1,40 @@
+{
+  "name": "paged-scroll",
+  "version": "0.0.1",
+  "description": "A small, hardened library for the newspaper page-turn scroll effect using GSAP ScrollTrigger.",
+  "type": "module",
+  "main": "./dist/paged-scroll.umd.cjs",
+  "module": "./dist/paged-scroll.js",
+  "exports": {
+    ".": {
+      "import": "./dist/paged-scroll.js",
+      "require": "./dist/paged-scroll.umd.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "gsap",
+    "scrolltrigger",
+    "scroll",
+    "pin",
+    "section",
+    "page-turn",
+    "paged-scroll"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "gsap": "^3.12.0"
+  },
+  "devDependencies": {
+    "gsap": "^3.12.0",
+    "vite": "^5.0.0"
+  }
+}
