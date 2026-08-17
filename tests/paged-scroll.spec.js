@@ -114,7 +114,12 @@ test.describe('PagedScroll demo', () => {
 
     // Click the Contact item; menu should close and page should scroll there.
     await page.click('#cover .mobile-nav-item:last-child');
-    await page.waitForTimeout(600);
+    // Smooth scroll can take a while for a far target, so wait until the
+    // contact panel has actually landed flush with the top of the viewport.
+    await page.waitForFunction(() => {
+      const contact = document.getElementById('contact');
+      return Math.abs(contact.getBoundingClientRect().top) <= 10;
+    }, { timeout: 4000 });
 
     const closeInfo = await page.evaluate(() => {
       const nav = document.querySelector('#cover .mobile-nav');
@@ -130,6 +135,49 @@ test.describe('PagedScroll demo', () => {
     expect(closeInfo.isOpen).toBe(false);
     expect(closeInfo.expanded).toBe('false');
     expect(Math.abs(closeInfo.contactTop)).toBeLessThanOrEqual(TOLERANCE);
+  });
+
+  test('last section stays flush after menu navigation and opening its hamburger', async ({ page }) => {
+    // Regression for a stale-geometry bug: navigating from an open hamburger
+    // could leave GSAP pin spacers in the expanded state; opening the last
+    // section's hamburger afterwards would then shift that section down and
+    // reveal the previous panel above it.
+    await page.click('#cover .mobile-nav-toggle');
+    await page.waitForTimeout(250);
+    await page.click('#cover .mobile-nav-item:last-child');
+    await page.waitForFunction(() => {
+      const contact = document.getElementById('contact');
+      return Math.abs(contact.getBoundingClientRect().top) <= 10;
+    }, { timeout: 4000 });
+    // The smooth scroll may still be settling; wait for it to finish before
+    // interacting with the target section.
+    await page.waitForTimeout(1500);
+
+    // Open the last section's hamburger — it must stay flush and on top.
+    await page.click('#contact .mobile-nav-toggle');
+    await page.waitForTimeout(600);
+
+    const result = await page.evaluate(() => {
+      const contact = document.getElementById('contact');
+      const gallery = document.getElementById('gallery');
+      const topEl = document.elementFromPoint(Math.floor(window.innerWidth / 2), 20);
+      const bottomEl = document.elementFromPoint(Math.floor(window.innerWidth / 2), window.innerHeight - 20);
+      const cr = contact.getBoundingClientRect();
+      return {
+        contactTop: cr.top,
+        contactHeight: cr.height,
+        viewportHeight: window.innerHeight,
+        topInsideContact: topEl ? contact.contains(topEl) : false,
+        bottomInsideContact: bottomEl ? contact.contains(bottomEl) : false,
+        galleryPosition: window.getComputedStyle(gallery).position,
+      };
+    });
+
+    expect(Math.abs(result.contactTop)).toBeLessThanOrEqual(TOLERANCE);
+    expect(result.contactHeight).toBeGreaterThanOrEqual(result.viewportHeight);
+    expect(result.topInsideContact).toBe(true);
+    expect(result.bottomInsideContact).toBe(true);
+    expect(result.galleryPosition).not.toBe('fixed');
   });
 
   test('last section fully covers the viewport so the previous panel does not show through', async ({ page }) => {

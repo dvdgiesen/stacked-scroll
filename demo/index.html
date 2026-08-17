@@ -501,6 +501,25 @@
           });
         }
 
+        // Resolves once all CSS transitions on an element have finished (next frame so
+        // the browser has already queued the transition after a class change).
+        function waitForTransitions(el) {
+          return new Promise((resolve) => {
+            requestAnimationFrame(() => {
+              const animations = el.getAnimations ? el.getAnimations() : [];
+              if (!animations.length) return resolve();
+              Promise.all(animations.map((a) => (a.finished ? a.finished.catch(() => {}) : Promise.resolve())))
+                .then(resolve);
+            });
+          });
+        }
+
+        function refreshScroller() {
+          if (window.scroller && typeof window.scroller.refresh === 'function') {
+            window.scroller.refresh();
+          }
+        }
+
         document.querySelectorAll('.mobile-nav-toggle').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -515,9 +534,9 @@
             if (!isOpen) {
               nav.classList.add('is-open');
               btn.setAttribute('aria-expanded', 'true');
-              requestAnimationFrame(() => {
-                if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
-              });
+              // Re-measure once the expand transition actually finishes so the
+              // expanded header is accounted for in pin spacers and the end spacer.
+              waitForTransitions(nav).then(refreshScroller);
             }
           });
         });
@@ -527,15 +546,20 @@
           nav.addEventListener('click', (e) => e.stopPropagation());
         });
 
-        window.mobileNavTo = function (itemEl, target) {
+        window.mobileNavTo = async function (itemEl, target) {
+          const openNavs = Array.from(document.querySelectorAll('.mobile-nav.is-open'));
           closeAllMobileNavs();
-          // Wait for the CSS close transition to finish so the header height is
-          // back to its collapsed value before the scroll offset is calculated.
-          setTimeout(() => {
+
+          // Wait for the collapse transition(s) to finish, then refresh geometry.
+          await Promise.all(openNavs.map(waitForTransitions));
+          refreshScroller();
+
+          // Give the refreshed layout one paint to settle, then smooth-scroll.
+          requestAnimationFrame(() => {
             if (window.scroller && typeof window.scroller.scrollTo === 'function') {
-              window.scroller.scrollTo(target, { behavior: 'auto' });
+              window.scroller.scrollTo(target);
             }
-          }, 300);
+          });
         };
       })();
     }
