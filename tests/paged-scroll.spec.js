@@ -92,6 +92,38 @@ test.describe('PagedScroll demo', () => {
     expect(Math.abs(result.contactHeaderTop)).toBeLessThanOrEqual(TOLERANCE);
     expect(result.contactHeaderVisible).toBe(true);
   });
+
+  test('last section fully covers the viewport so the previous panel does not show through', async ({ page }) => {
+    // Regression for a demo bug: a short-content last section must still have
+    // min-height: 100vh so the previous panel does not show through below it.
+    await page.evaluate(() => window.scroller.scrollTo('contact', { behavior: 'auto' }));
+    await page.waitForTimeout(500);
+
+    const result = await page.evaluate(() => {
+      const contact = document.getElementById('contact');
+      const gallery = document.getElementById('gallery');
+      const viewportHeight = window.innerHeight;
+      const cr = contact.getBoundingClientRect();
+      // Probe near the bottom edge of the viewport.
+      const bottomEl = document.elementFromPoint(200, viewportHeight - 20);
+
+      return {
+        contactHeight: cr.height,
+        contactTop: cr.top,
+        contactBottom: cr.bottom,
+        viewportHeight,
+        galleryPosition: window.getComputedStyle(gallery).position,
+        bottomElementInsideContact: bottomEl ? contact.contains(bottomEl) : false,
+      };
+    });
+
+    // Contact should fill the viewport, be flush at the top, and be on top at
+    // the bottom of the screen (not gallery).
+    expect(result.contactHeight).toBeGreaterThanOrEqual(result.viewportHeight);
+    expect(Math.abs(result.contactTop)).toBeLessThanOrEqual(TOLERANCE);
+    expect(result.bottomElementInsideContact).toBe(true);
+    expect(result.galleryPosition).not.toBe('fixed');
+  });
 });
 
 test.describe('Adjacent short panels regression', () => {

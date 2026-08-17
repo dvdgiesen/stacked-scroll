@@ -98,11 +98,8 @@
       border-bottom: none;
     }
 
-    /* Short panels demonstrate the spacer and compact modes */
-    .panel.short {
-      min-height: 50vh;
-      min-height: 50dvh;
-    }
+    /* The "short" sections have compact content, but each panel still keeps
+       min-height: 100vh so a pinned panel fully covers the section behind it. */
 
     /* On very short viewports, hide the per-section title bar so the content
        gets the full viewport. Primary navigation remains in .site-nav. */
@@ -241,7 +238,8 @@
       font-size: 1rem;
     }
 
-    /* Short panel layout */
+    /* Short-content panel layout — the panel itself still fills the viewport
+       (min-height: 100vh) so the previous panel never shows through below. */
     .short .main {
       display: flex;
       flex-direction: column;
@@ -371,7 +369,7 @@
       <div class="rule"></div>
       <p>This demo uses <strong>PagedScroll</strong>, a tiny GSAP ScrollTrigger wrapper extracted from a production site. It solves the two edge cases that break every naive implementation:</p>
       <ul class="features">
-        <li><strong>Short last panel</strong> — an invisible spacer guarantees the final section can scroll flush to the top, even when it is shorter than the viewport.</li>
+        <li><strong>Short last panel</strong> — an invisible spacer guarantees the final section can scroll flush to the top, even when its content is shorter than the viewport.</li>
         <li><strong>Deep links</strong> — the robust <code>scrollTo()</code> calculation never walks the <code>offsetParent</code> chain, so pinned sections cannot corrupt the target position.</li>
         <li><strong>Constraint</strong> — two consecutive short panels are not supported in v1; this demo avoids them.</li>
       </ul>
@@ -425,7 +423,7 @@
     </header>
     <main class="main">
       <h2>Short section</h2>
-      <p class="lead">This panel is shorter than the viewport, so it pins immediately at the top. The next section will slide up over it as soon as you scroll.</p>
+      <p class="lead">This panel's content is shorter than the viewport, so it pins immediately at the top. The next section will slide up over it as soon as you scroll.</p>
       <div class="rule"></div>
       <p>Use the nav to jump away and back — the landing position is computed from each panel's natural height, not its live pinned offset.</p>
       <a href="#gallery" class="button" onclick="event.preventDefault(); scroller.scrollTo('gallery')">Next: Gallery</a>
@@ -462,7 +460,7 @@
     </header>
     <main class="main">
       <h2>Flush top</h2>
-      <p class="lead">Because this last panel is shorter than the viewport, the browser cannot scroll it to the top on its own.</p>
+      <p class="lead">Because this last panel's content is shorter than the viewport, the browser cannot scroll it to the top on its own.</p>
       <div class="rule"></div>
       <p>PagedScroll adds an invisible spacer at the end of the document, sized to exactly the missing height. Try resizing your browser — the spacer recalculates on every resize.</p>
       <a href="#cover" class="button" onclick="event.preventDefault(); scroller.scrollTo('cover')">Back to top</a>
