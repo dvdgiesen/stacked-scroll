@@ -66,6 +66,26 @@
       font-weight: bold;
     }
 
+    .nav-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .nav-toggle input {
+      margin: 0;
+      width: 0.9rem;
+      height: 0.9rem;
+      accent-color: var(--rule);
+      cursor: pointer;
+    }
+
     /* Panel / section layout — NO position: relative here; it breaks GSAP pinning. */
     .panel {
       min-height: 100vh;
@@ -88,6 +108,28 @@
        gets the full viewport. Primary navigation remains in .site-nav. */
     .paged-scroll-compact .header {
       display: none;
+    }
+
+    /* Demo helper: hide the fixed nav so the raw page-turn effect can be
+       inspected without the navigation bar overlapping the section headers.
+       The hide toggle itself stays visible so the nav can be restored. */
+    .demo-hide-nav .site-nav {
+      background: transparent;
+      border-bottom-color: transparent;
+      backdrop-filter: none;
+      pointer-events: none;
+    }
+
+    .demo-hide-nav .site-nav > *:not(.nav-toggle) {
+      display: none;
+    }
+
+    .demo-hide-nav .nav-toggle {
+      pointer-events: auto;
+      margin-left: auto;
+      padding: 0.35rem 0.6rem;
+      background: var(--paper);
+      border: 1px solid var(--rule);
     }
 
     /* Section header — sticky inside its panel */
@@ -309,6 +351,10 @@
     <button onclick="scroller.scrollTo('highlight')">Highlight</button>
     <button onclick="scroller.scrollTo('gallery')">Gallery</button>
     <button onclick="scroller.scrollTo('contact')">Contact</button>
+    <label class="nav-toggle" aria-label="Hide demo navigation">
+      <input type="checkbox" id="hideNavToggle">
+      <span>Hide nav</span>
+    </label>
   </nav>
 
   <section class="panel" id="cover">
@@ -438,6 +484,18 @@
         mainSelector: '.main',
         hideHeadersBelow: 600
       }).init();
+
+      // Demo-only toggle to hide the fixed nav so the raw page-turn effect
+      // (headers sticking flush at the top) can be visually inspected.
+      const hideNavToggle = document.getElementById('hideNavToggle');
+      if (hideNavToggle) {
+        hideNavToggle.addEventListener('change', () => {
+          document.documentElement.classList.toggle('demo-hide-nav', hideNavToggle.checked);
+          if (window.scroller && typeof window.scroller.refresh === 'function') {
+            window.scroller.refresh();
+          }
+        });
+      }
     }
     initScroller();
   </script>
