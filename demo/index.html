@@ -78,6 +78,18 @@
       border-bottom: none;
     }
 
+    /* Short panels demonstrate the spacer and compact modes */
+    .panel.short {
+      min-height: 50vh;
+      min-height: 50dvh;
+    }
+
+    /* On very short viewports, hide the per-section title bar so the content
+       gets the full viewport. Primary navigation remains in .site-nav. */
+    .paged-scroll-compact .header {
+      display: none;
+    }
+
     /* Section header — sticky inside its panel */
     .header {
       position: sticky;
@@ -423,7 +435,8 @@
       window.scroller = new PagedScroll({
         sections: '.panel',
         headerSelector: '.header',
-        mainSelector: '.main'
+        mainSelector: '.main',
+        hideHeadersBelow: 600
       }).init();
     }
     initScroller();

@@ -69,6 +69,29 @@ test.describe('PagedScroll demo', () => {
 
     expect(Math.abs(offset)).toBeLessThanOrEqual(TOLERANCE);
   });
+
+  test('previous panel releases at the last transition so headers do not overlap', async ({ page }) => {
+    // Scroll to the final section. With the pin-end clamp fix, the previous
+    // panel must no longer be position:fixed, and the final panel's header
+    // must be the visible one at the top of the viewport.
+    await page.evaluate(() => window.scroller.scrollTo('contact', { behavior: 'auto' }));
+    await page.waitForTimeout(500);
+
+    const result = await page.evaluate(() => {
+      const gallery = document.getElementById('gallery');
+      const contactHeader = document.querySelector('#contact .header');
+      return {
+        galleryPosition: window.getComputedStyle(gallery).position,
+        contactHeaderTop: contactHeader.getBoundingClientRect().top,
+        contactHeaderVisible: document.elementsFromPoint(10, 10)
+          .some(el => el.classList.contains('header') && el.closest('#contact'))
+      };
+    });
+
+    expect(result.galleryPosition).not.toBe('fixed');
+    expect(Math.abs(result.contactHeaderTop)).toBeLessThanOrEqual(TOLERANCE);
+    expect(result.contactHeaderVisible).toBe(true);
+  });
 });
 
 test.describe('Adjacent short panels regression', () => {

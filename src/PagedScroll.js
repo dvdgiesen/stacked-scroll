@@ -6,8 +6,9 @@ import ScrollTrigger from 'gsap/ScrollTrigger';
  * "newspaper page-turn" scroll effect built on GSAP ScrollTrigger.
  *
  * Extracted from the RotYounges website, with the fragile edge cases
- * (short last panel flush-top, deep-link offset under pinned sections)
- * generalized into a reusable module.
+ * (short last panel flush-top, deep-link offset under pinned sections,
+ * previous panel release on the final transition) generalized into a
+ * reusable module.
  */
 export class PagedScroll {
   /**
@@ -18,6 +19,10 @@ export class PagedScroll {
    * @param {string | null} [options.spacerSelector=null]
    * @param {number} [options.resizeDebounceMs=200]
    * @param {string} [options.scrollBehavior='smooth']
+   * @param {number | null} [options.hideHeadersBelow=null]
+   *        Viewport height (px) below which section headers are hidden/collapsed.
+   * @param {string} [options.compactClassName='paged-scroll-compact']
+   *        Class added to <html> when the viewport is below hideHeadersBelow.
    */
   constructor(options = {}) {
     this.config = {
@@ -26,7 +31,9 @@ export class PagedScroll {
       mainSelector: options.mainSelector ?? '.main',
       spacerSelector: options.spacerSelector ?? null,
       resizeDebounceMs: options.resizeDebounceMs ?? 200,
-      scrollBehavior: options.scrollBehavior ?? 'smooth'
+      scrollBehavior: options.scrollBehavior ?? 'smooth',
+      hideHeadersBelow: options.hideHeadersBelow ?? null,
+      compactClassName: options.compactClassName ?? 'paged-scroll-compact'
     };
 
     this.sections = [];
@@ -37,6 +44,7 @@ export class PagedScroll {
     this._onLoad = this._handleLoad.bind(this);
     this._onResize = this._handleResize.bind(this);
     this._onOrientationChange = this._handleOrientationChange.bind(this);
+    this._onVisualViewportResize = this._handleVisualViewportResize.bind(this);
 
     gsap.registerPlugin(ScrollTrigger);
   }
@@ -54,6 +62,11 @@ export class PagedScroll {
     }
 
     this._ensureSpacer();
+
+    // Apply compact-state class before measuring so pin ranges are calculated
+    // with the correct (possibly header-less) section heights.
+    this._updateCompactState();
+
     this._createTriggers();
     this._updateSpacer();
     this._attachListeners();
@@ -94,6 +107,7 @@ export class PagedScroll {
    * Refresh all cached ScrollTrigger measurements and spacer sizing.
    */
   refresh() {
+    this._updateCompactState();
     this._updateSpacer();
     ScrollTrigger.refresh();
   }
@@ -105,6 +119,11 @@ export class PagedScroll {
     window.removeEventListener('load', this._onLoad);
     window.removeEventListener('resize', this._onResize);
     window.removeEventListener('orientationchange', this._onOrientationChange);
+
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', this._onVisualViewportResize);
+    }
+
     clearTimeout(this.resizeTimer);
 
     this.triggers.forEach((trigger) => trigger.kill());
@@ -114,6 +133,8 @@ export class PagedScroll {
       this.spacer.remove();
       this.spacer = null;
     }
+
+    document.documentElement.classList.remove(this.config.compactClassName);
 
     this.sections = [];
   }
@@ -154,6 +175,7 @@ export class PagedScroll {
       const trigger = ScrollTrigger.create({
         trigger: section,
         start: () => this._computeStart(section),
+        end: () => this._computeEnd(section),
         pin: true,
         pinSpacing: false
       });
@@ -167,6 +189,37 @@ export class PagedScroll {
     return section.offsetHeight < this._getViewportHeight() ? 'top top' : 'bottom bottom';
   }
 
+  _computeEnd(section) {
+    const idx = this.sections.indexOf(section);
+
+    // Last section: pin through the end of the document so it can reach
+    // flush-top when shorter than the viewport.
+    if (idx === this.sections.length - 1) {
+      return 'max';
+    }
+
+    // Handoff point: the top edge of the next section, measured in natural
+    // (unpinned) document coordinates.
+    const nextTop = this._cumulativeHeightTo(idx);
+
+    // GSAP only releases a pin once scroll has passed `end`. If `end` lands on
+    // or past the document's maximum scroll position (most commonly when the
+    // last section is shorter than the viewport), the browser can never scroll
+    // past it and the previous panel stays `position: fixed` forever, covering
+    // the final section. Clamp the end just before max scroll so the handoff
+    // can always complete.
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    return Math.min(nextTop, Math.max(maxScroll - 1, 0));
+  }
+
+  _cumulativeHeightTo(idx) {
+    let sum = 0;
+    for (let i = 0; i <= idx; i++) {
+      sum += this.sections[i].offsetHeight;
+    }
+    return sum;
+  }
+
   _updateSpacer() {
     if (!this.spacer || this.sections.length === 0) return;
 
@@ -176,13 +229,25 @@ export class PagedScroll {
     this.spacer.style.height = (shortfall > 0 ? shortfall : 0) + 'px';
   }
 
+  _updateCompactState() {
+    if (!this.config.hideHeadersBelow) return;
+
+    const isCompact = this._getViewportHeight() < this.config.hideHeadersBelow;
+    document.documentElement.classList.toggle(this.config.compactClassName, isCompact);
+  }
+
   _attachListeners() {
     window.addEventListener('load', this._onLoad);
     window.addEventListener('resize', this._onResize);
     window.addEventListener('orientationchange', this._onOrientationChange);
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', this._onVisualViewportResize);
+    }
   }
 
   _handleLoad() {
+    this._updateCompactState();
     this._updateSpacer();
     ScrollTrigger.refresh();
   }
@@ -190,6 +255,7 @@ export class PagedScroll {
   _handleResize() {
     clearTimeout(this.resizeTimer);
     this.resizeTimer = setTimeout(() => {
+      this._updateCompactState();
       this._updateSpacer();
       ScrollTrigger.refresh();
     }, this.config.resizeDebounceMs);
@@ -199,9 +265,16 @@ export class PagedScroll {
     // visualViewport may not report the final size immediately after a
     // device rotation; defer the recalculation so the spacer stays correct.
     setTimeout(() => {
+      this._updateCompactState();
       this._updateSpacer();
       ScrollTrigger.refresh();
     }, 100);
+  }
+
+  _handleVisualViewportResize() {
+    // URL bar show/hide on mobile changes the visual viewport without
+    // necessarily firing a window resize event. Debounce the same way.
+    this._handleResize();
   }
 
   _getViewportHeight() {

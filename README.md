@@ -57,6 +57,28 @@ The library only handles the JavaScript side of pinning. Your CSS must cooperate
 
 See `demo/index.html` for a working example.
 
+### Hiding headers on short viewports
+
+If you enable `hideHeadersBelow`, PagedScroll adds the configured class to
+`<html>` whenever the viewport is shorter than the threshold. You then decide
+what happens to the per-section header via CSS. Keep your site's primary
+navigation outside the section header so it remains accessible when the header
+is hidden.
+
+```css
+/* Hide the per-section title bar on short viewports */
+.paged-scroll-compact .header {
+  display: none;
+}
+
+/* Or collapse it instead of hiding it */
+.paged-scroll-compact .header {
+  height: 2rem;
+  padding: 0.25rem 1rem;
+  font-size: 0.75rem;
+}
+```
+
 ## Configuration
 
 ```js
@@ -78,7 +100,14 @@ new PagedScroll({
   resizeDebounceMs: 200,
 
   // Default scroll behavior for scrollTo()
-  scrollBehavior: 'smooth'
+  scrollBehavior: 'smooth',
+
+  // Optional: when the viewport height (px) drops below this value, add
+  // compactClassName to <html> so you can hide/collapse per-section headers.
+  hideHeadersBelow: null,
+
+  // Class added to <html> when the viewport is shorter than hideHeadersBelow.
+  compactClassName: 'paged-scroll-compact'
 });
 ```
 
@@ -130,6 +159,7 @@ GSAP ScrollTrigger provides the low-level `pin` primitive, but packaging the spe
 1. **Short last panel** — when the last section is shorter than the viewport, the browser physically cannot scroll it flush to the top. `paged-scroll` adds an invisible spacer sized to exactly the missing height.
 2. **Deep links under pinned sections** — `offsetTop`/`offsetParent` become unreliable when GSAP sets `position: fixed` on the active panel. `scrollTo()` avoids them entirely by summing natural panel heights and using a same-tick `getBoundingClientRect()` difference.
 3. **Adjacent short panels** — two consecutive sections both shorter than the viewport do not get a clean handoff. This is a documented v1 constraint; the demo avoids it by design.
+4. **Previous panel never releases on the final transition** — when the last section is shorter than the viewport, the previous panel's pin `end` can land on the document's maximum scroll position, so GSAP can never scroll past it and the panel stays `position: fixed`. PagedScroll clamps every non-final pin end to just below `maxScroll` so the handoff always completes.
 
 ## Demo
 
