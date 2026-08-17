@@ -27,65 +27,6 @@
       line-height: 1.6;
     }
 
-    /* Fixed nav */
-    .site-nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      display: flex;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      background: rgba(247, 245, 240, 0.95);
-      border-bottom: 2px solid var(--rule);
-      backdrop-filter: blur(4px);
-    }
-
-    .site-nav a,
-    .site-nav button {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--ink);
-      background: transparent;
-      border: 1px solid transparent;
-      padding: 0.35rem 0.6rem;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .site-nav a:hover,
-    .site-nav button:hover {
-      border-color: var(--rule);
-    }
-
-    .site-nav .brand {
-      margin-right: auto;
-      font-weight: bold;
-    }
-
-    .nav-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .nav-toggle input {
-      margin: 0;
-      width: 0.9rem;
-      height: 0.9rem;
-      accent-color: var(--rule);
-      cursor: pointer;
-    }
-
     /* Panel / section layout — NO position: relative here; it breaks GSAP pinning. */
     .panel {
       min-height: 100vh;
@@ -101,49 +42,25 @@
     /* The "short" sections have compact content, but each panel still keeps
        min-height: 100vh so a pinned panel fully covers the section behind it. */
 
-    /* On very short viewports, hide the per-section title bar so the content
-       gets the full viewport. Primary navigation remains in .site-nav. */
-    .paged-scroll-compact .header {
-      display: none;
-    }
-
-    /* Demo helper: hide the fixed nav so the raw page-turn effect can be
-       inspected without the navigation bar overlapping the section headers.
-       The hide toggle itself stays visible so the nav can be restored. */
-    .demo-hide-nav .site-nav {
-      background: transparent;
-      border-bottom-color: transparent;
-      backdrop-filter: none;
-      pointer-events: none;
-    }
-
-    .demo-hide-nav .site-nav > *:not(.nav-toggle) {
-      display: none;
-    }
-
-    .demo-hide-nav .nav-toggle {
-      pointer-events: auto;
-      margin-left: auto;
-      padding: 0.35rem 0.6rem;
-      background: var(--paper);
-      border: 1px solid var(--rule);
-    }
-
     /* Section header — sticky inside its panel */
     .header {
       position: sticky;
       top: 0;
-      height: var(--header-height);
-      display: flex;
-      align-items: center;
-      padding: 0 1.5rem;
+      padding: 0;
       background: var(--paper);
-      border-bottom: 1px solid var(--rule);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       z-index: 10;
+    }
+
+    .header__bar {
+      display: flex;
+      align-items: center;
+      min-height: var(--header-height);
+      padding: 0 1.5rem;
+      border-bottom: 1px solid var(--rule);
     }
 
     .header__title {
@@ -153,6 +70,71 @@
     .header__kicker {
       margin-left: auto;
       opacity: 0.6;
+    }
+
+    /* Mobile-style hamburger navigation — shown on every viewport, exactly as
+       RotYounges presents it on mobile. */
+    .mobile-nav-toggle {
+      background: none;
+      border: none;
+      padding: 0 0.25rem;
+      margin-left: 1rem;
+      font-size: 1.4rem;
+      line-height: 1;
+      color: var(--ink);
+      cursor: pointer;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .mobile-nav-toggle:hover {
+      color: var(--accent);
+    }
+
+    .mobile-nav-toggle[aria-expanded="true"] {
+      color: transparent;
+      position: relative;
+      font-size: 1.8rem;
+    }
+
+    .mobile-nav-toggle[aria-expanded="true"]::before {
+      content: '\00D7';
+      color: var(--ink);
+      position: absolute;
+      right: 0.25rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.6rem;
+    }
+
+    .mobile-nav {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+      background-color: var(--paper);
+    }
+
+    .mobile-nav.is-open {
+      max-height: 20rem;
+    }
+
+    .mobile-nav-item {
+      display: block;
+      padding: 0.55rem 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-align: center;
+      border-bottom: 1px solid var(--rule);
+      cursor: pointer;
+    }
+
+    .mobile-nav-item:last-child {
+      border-bottom: none;
+    }
+
+    .mobile-nav-item:hover {
+      color: var(--accent);
     }
 
     /* Main content */
@@ -329,36 +311,23 @@
       }
     }
 
-    @media (max-width: 640px) {
-      .site-nav {
-        flex-wrap: wrap;
-        gap: 0.25rem;
-      }
-      .site-nav .brand {
-        width: 100%;
-        margin-right: 0;
-      }
-    }
   </style>
 </head>
 <body>
-  <nav class="site-nav" aria-label="Sections">
-    <a href="#cover" class="brand" onclick="event.preventDefault(); scroller.scrollTo('cover')">PagedScroll</a>
-    <button onclick="scroller.scrollTo('cover')">Cover</button>
-    <button onclick="scroller.scrollTo('longread')">Long Read</button>
-    <button onclick="scroller.scrollTo('highlight')">Highlight</button>
-    <button onclick="scroller.scrollTo('gallery')">Gallery</button>
-    <button onclick="scroller.scrollTo('contact')">Contact</button>
-    <label class="nav-toggle" aria-label="Hide demo navigation">
-      <input type="checkbox" id="hideNavToggle">
-      <span>Hide nav</span>
-    </label>
-  </nav>
-
   <section class="panel" id="cover">
     <header class="header">
-      <span class="header__title">The Front Page</span>
-      <span class="header__kicker">Issue No. 1</span>
+      <div class="header__bar">
+        <span class="header__title">The Front Page</span>
+        <span class="header__kicker">Issue No. 1</span>
+        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+      </div>
+      <nav class="mobile-nav" aria-label="Navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
+      </nav>
     </header>
     <main class="main">
       <div class="masthead">
@@ -379,8 +348,18 @@
 
   <section class="panel" id="longread">
     <header class="header">
-      <span class="header__title">The Long Read</span>
-      <span class="header__kicker">Tall section</span>
+      <div class="header__bar">
+        <span class="header__title">The Long Read</span>
+        <span class="header__kicker">Tall section</span>
+        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+      </div>
+      <nav class="mobile-nav" aria-label="Navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
+      </nav>
     </header>
     <main class="main">
       <h2>The page-turn mechanic</h2>
@@ -418,8 +397,18 @@
 
   <section class="panel short" id="highlight">
     <header class="header">
-      <span class="header__title">The Highlight</span>
-      <span class="header__kicker">Short section</span>
+      <div class="header__bar">
+        <span class="header__title">The Highlight</span>
+        <span class="header__kicker">Short section</span>
+        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+      </div>
+      <nav class="mobile-nav" aria-label="Navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
+      </nav>
     </header>
     <main class="main">
       <h2>Short section</h2>
@@ -432,8 +421,18 @@
 
   <section class="panel" id="gallery">
     <header class="header">
-      <span class="header__title">The Gallery</span>
-      <span class="header__kicker">Another tall section</span>
+      <div class="header__bar">
+        <span class="header__title">The Gallery</span>
+        <span class="header__kicker">Another tall section</span>
+        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+      </div>
+      <nav class="mobile-nav" aria-label="Navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
+      </nav>
     </header>
     <main class="main">
       <h2>Visual rhythm</h2>
@@ -455,8 +454,18 @@
 
   <section class="panel short" id="contact">
     <header class="header">
-      <span class="header__title">Contact</span>
-      <span class="header__kicker">Last short section</span>
+      <div class="header__bar">
+        <span class="header__title">Contact</span>
+        <span class="header__kicker">Last short section</span>
+        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+      </div>
+      <nav class="mobile-nav" aria-label="Navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
+      </nav>
     </header>
     <main class="main">
       <h2>Flush top</h2>
@@ -479,21 +488,60 @@
       window.scroller = new PagedScroll({
         sections: '.panel',
         headerSelector: '.header',
-        mainSelector: '.main',
-        hideHeadersBelow: 600
+        mainSelector: '.main'
       }).init();
 
-      // Demo-only toggle to hide the fixed nav so the raw page-turn effect
-      // (headers sticking flush at the top) can be visually inspected.
-      const hideNavToggle = document.getElementById('hideNavToggle');
-      if (hideNavToggle) {
-        hideNavToggle.addEventListener('change', () => {
-          document.documentElement.classList.toggle('demo-hide-nav', hideNavToggle.checked);
-          if (window.scroller && typeof window.scroller.refresh === 'function') {
-            window.scroller.refresh();
-          }
+      // RotYounges-style mobile hamburger navigation. Each section header gets
+      // its own toggle/dropdown. Shown on all screen sizes per the demo brief.
+      (function () {
+        function closeAllMobileNavs() {
+          document.querySelectorAll('.mobile-nav.is-open').forEach(nav => {
+            nav.classList.remove('is-open');
+            const header = nav.closest('.header');
+            if (header) {
+              const btn = header.querySelector('.mobile-nav-toggle');
+              if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+          });
+        }
+
+        document.querySelectorAll('.mobile-nav-toggle').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const header = btn.closest('.header');
+            if (!header) return;
+            const nav = header.querySelector('.mobile-nav');
+            if (!nav) return;
+
+            const isOpen = nav.classList.contains('is-open');
+            closeAllMobileNavs();
+
+            if (!isOpen) {
+              nav.classList.add('is-open');
+              btn.setAttribute('aria-expanded', 'true');
+              requestAnimationFrame(() => {
+                if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+              });
+            }
+          });
         });
-      }
+
+        document.addEventListener('click', () => closeAllMobileNavs());
+        document.querySelectorAll('.mobile-nav').forEach(nav => {
+          nav.addEventListener('click', (e) => e.stopPropagation());
+        });
+
+        window.mobileNavTo = function (itemEl, target) {
+          closeAllMobileNavs();
+          // Wait for the CSS close transition to finish so the header height is
+          // back to its collapsed value before the scroll offset is calculated.
+          setTimeout(() => {
+            if (window.scroller && typeof window.scroller.scrollTo === 'function') {
+              window.scroller.scrollTo(target, { behavior: 'auto' });
+            }
+          }, 300);
+        };
+      })();
     }
     initScroller();
   </script>

@@ -93,6 +93,45 @@ test.describe('PagedScroll demo', () => {
     expect(result.contactHeaderVisible).toBe(true);
   });
 
+  test('hamburger nav opens, closes, and scrolls to target', async ({ page }) => {
+    // Open the cover section's mobile-style navigation.
+    await page.click('#cover .mobile-nav-toggle');
+    await page.waitForTimeout(250);
+
+    const openInfo = await page.evaluate(() => {
+      const nav = document.querySelector('#cover .mobile-nav');
+      const btn = document.querySelector('#cover .mobile-nav-toggle');
+      return {
+        isOpen: nav.classList.contains('is-open'),
+        expanded: btn.getAttribute('aria-expanded'),
+        navHeight: nav.getBoundingClientRect().height,
+      };
+    });
+
+    expect(openInfo.isOpen).toBe(true);
+    expect(openInfo.expanded).toBe('true');
+    expect(openInfo.navHeight).toBeGreaterThan(0);
+
+    // Click the Contact item; menu should close and page should scroll there.
+    await page.click('#cover .mobile-nav-item:last-child');
+    await page.waitForTimeout(600);
+
+    const closeInfo = await page.evaluate(() => {
+      const nav = document.querySelector('#cover .mobile-nav');
+      const btn = document.querySelector('#cover .mobile-nav-toggle');
+      const contact = document.getElementById('contact');
+      return {
+        isOpen: nav.classList.contains('is-open'),
+        expanded: btn.getAttribute('aria-expanded'),
+        contactTop: contact.getBoundingClientRect().top,
+      };
+    });
+
+    expect(closeInfo.isOpen).toBe(false);
+    expect(closeInfo.expanded).toBe('false');
+    expect(Math.abs(closeInfo.contactTop)).toBeLessThanOrEqual(TOLERANCE);
+  });
+
   test('last section fully covers the viewport so the previous panel does not show through', async ({ page }) => {
     // Regression for a demo bug: a short-content last section must still have
     // min-height: 100vh so the previous panel does not show through below it.
