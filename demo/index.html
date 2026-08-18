@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PagedScroll — Newspaper page-turn scrolling</title>
+  <title>StackedScroll — Stacked-pages scrolling</title>
   <style>
     :root {
       --paper: #f7f5f0;
@@ -327,12 +327,12 @@
     </header>
     <main class="main">
       <div class="masthead">
-        <h2 class="masthead__title">PagedScroll</h2>
-        <p class="masthead__subtitle">A hardened page-turn scroll effect</p>
+        <h2 class="masthead__title">StackedScroll</h2>
+        <p class="masthead__subtitle">A hardened stacked-pages scroll effect</p>
       </div>
-      <p class="lead">Scroll down. Each section behaves like a page in a newspaper: read through the content while the header stays pinned, then the next page slides up to take its place.</p>
+      <p class="lead">Scroll down. Each section behaves like a page in a stack of papers: read through the content while the header stays pinned, then the next page slides up to take its place.</p>
       <div class="rule"></div>
-      <p>This demo uses <strong>PagedScroll</strong>, a tiny GSAP ScrollTrigger wrapper extracted from a production site. It solves the two edge cases that break every naive implementation:</p>
+      <p>This demo uses <strong>StackedScroll</strong>, a tiny GSAP ScrollTrigger wrapper extracted from rotyounges.com. It solves the two edge cases that break every naive implementation:</p>
       <ul class="features">
         <li><strong>Short last panel</strong> — an invisible spacer guarantees the final section can scroll flush to the top, even when its content is shorter than the viewport.</li>
         <li><strong>Deep links</strong> — the robust <code>scrollTo()</code> calculation never walks the <code>offsetParent</code> chain, so pinned sections cannot corrupt the target position.</li>
@@ -358,7 +358,7 @@
       </nav>
     </header>
     <main class="main">
-      <h2>The page-turn mechanic</h2>
+      <h2>The stacked-pages mechanic</h2>
       <p class="lead">This section is taller than your viewport. Scroll through its body first. Only once you reach the bottom does the next section begin to slide over it.</p>
       <div class="rule"></div>
       <p>That is the core difference between this effect and a simple sticky header. With sticky positioning alone, the header releases as soon as its container scrolls out. Here, the entire panel stays visually locked until you have consumed its content, producing a hard cut to the next section.</p>
@@ -373,7 +373,7 @@
         </article>
         <article>
           <h4>03 — The offsetParent trap</h4>
-          <p>When GSAP pins a panel, it sets <code>position: fixed</code>. That makes <code>offsetTop</code> and <code>offsetParent</code> unreliable for computing a target's document position — the classic deep-link bug. PagedScroll avoids them entirely.</p>
+          <p>When GSAP pins a panel, it sets <code>position: fixed</code>. That makes <code>offsetTop</code> and <code>offsetParent</code> unreliable for computing a target's document position — the classic deep-link bug. StackedScroll avoids them entirely.</p>
         </article>
         <article>
           <h4>04 — Natural height sum</h4>
@@ -467,21 +467,21 @@
       <h2>Flush top</h2>
       <p class="lead">Because this last panel's content is shorter than the viewport, the browser cannot scroll it to the top on its own.</p>
       <div class="rule"></div>
-      <p>PagedScroll adds an invisible spacer at the end of the document, sized to exactly the missing height. Try resizing your browser — the spacer recalculates on every resize.</p>
+      <p>StackedScroll adds an invisible spacer at the end of the document, sized to exactly the missing height. Try resizing your browser — the spacer recalculates on every resize.</p>
       <a href="#cover" class="button" onclick="event.preventDefault(); scroller.scrollTo('cover')">Back to top</a>
     </main>
   </section>
 
   <script src="/node_modules/gsap/dist/gsap.min.js"></script>
   <script src="/node_modules/gsap/dist/ScrollTrigger.min.js"></script>
-  <script src="../dist/paged-scroll.umd.cjs"></script>
+  <script src="../dist/stacked-scroll.umd.cjs"></script>
   <script>
     function initScroller() {
-      if (typeof window.gsap === 'undefined' || typeof window.ScrollTrigger === 'undefined' || typeof window.PagedScroll === 'undefined') {
+      if (typeof window.gsap === 'undefined' || typeof window.ScrollTrigger === 'undefined' || typeof window.StackedScroll === 'undefined') {
         setTimeout(initScroller, 50);
         return;
       }
-      window.scroller = new PagedScroll({
+      window.scroller = new StackedScroll({
         sections: '.panel',
         headerSelector: '.header',
         mainSelector: '.main'

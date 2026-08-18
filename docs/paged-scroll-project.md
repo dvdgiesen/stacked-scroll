@@ -1,4 +1,4 @@
-# Paged Scroll — Project Planning Doc
+# StackedScroll — Project Planning Doc
 
 > **Status:** Early planning / not yet started.
 > **Not part of the RotYounges client codebase** — this file is gitignored and lives here only for convenience while it's fresh in mind from building the RotYounges site. Move it to its own repo once work actually begins.
@@ -7,7 +7,7 @@
 
 ## 1. Problem Statement & Prior Art
 
-Certain portfolio/agency/editorial sites use a "page-turn" scrolling effect: the page is divided into full-viewport-ish sections. As you scroll, the **current section's header stays pinned/sticky** while its body content scrolls underneath it. Only once you've scrolled all the way through that section's content does the **next section slide up from below and take over**, bringing its own header with it. Scrolling back up reverses the whole thing symmetrically. Done well, it feels like flipping through pages of a newspaper or magazine rather than a normal continuous-scroll page.
+Certain portfolio/agency/editorial sites use a "stacked-pages" scrolling effect: the page is divided into full-viewport-ish sections. As you scroll, the **current section's header stays pinned/sticky** while its body content scrolls underneath it. Only once you've scrolled all the way through that section's content does the **next section slide up from below and take over**, bringing its own header with it. Scrolling back up reverses the whole thing symmetrically. Done well, it feels like flipping through a stack of papers rather than a normal continuous-scroll page.
 
 This is a recognizable pattern on award-site-style portfolios (Awwwards/FWA-adjacent agency sites), but:
 
@@ -87,11 +87,11 @@ This never needs to know any section's current pin/fixed state at all — which 
 
 ## 4. Proposed Architecture (GSAP-Based Edition — Build This First)
 
-A generic module, tentatively `PagedScroll`, extracted from RotYounges' hardcoded `src/index.js` implementation.
+A generic module, `StackedScroll`, extracted from rotyounges.com, hardcoded `src/index.js` implementation.
 
 ### Config shape (draft)
 ```js
-const pagedScroll = new PagedScroll({
+const stackedScroll = new StackedScroll({
   sections: '.panel',       // selector or NodeList/Array of section elements
   headerSelector: '.header',// selector (scoped per-section) for the pinned header, for offset calc
   mainSelector: '.main',    // selector (scoped per-section) for the default scroll target within a section
@@ -122,7 +122,7 @@ const pagedScroll = new PagedScroll({
    - `.header` / `.main` class names → configurable selectors
    - `panels` global array → constructor-provided sections
    - `window.scrollToMain` global → instance method
-3. Add the `PagedScroll` class wrapper + public API from §4.
+3. Add the `StackedScroll` class wrapper + public API from §4.
 4. Write a handful of automated regression tests (even basic ones) specifically covering §3's three bugs, since they're each the kind of thing that silently regresses:
    - short+short adjacent sections don't visually overlap
    - last section shorter than viewport still reaches flush-top
@@ -154,9 +154,9 @@ const pagedScroll = new PagedScroll({
 
 ## 8. Rough Roadmap
 
-- [ ] Check npm name availability for `paged-scroll` and lock it in.
-- [ ] Set up new repo (separate from RotYounges) for the `paged-scroll` package.
-- [ ] Extract & generalize the RotYounges code blocks into the `PagedScroll` module (§5.1–5.3).
+- [x] Check npm name availability for `stacked-scroll` and lock it in.
+- [ ] Set up new repo (separate from RotYounges) for the `stacked-scroll` package.
+- [ ] Extract & generalize the rotyounges.com code blocks into the `StackedScroll` module (§5.1–5.3).
 - [ ] Build public demo site **first** (§5.5) — this is the proof-of-working and the primary marketing asset.
 - [ ] Freeze the public API against the working demo.
 - [ ] Write regression coverage for the solved hard bugs (§5.4) using **Playwright** (not jsdom/Jest), with real viewport sizes and real scroll interactions.

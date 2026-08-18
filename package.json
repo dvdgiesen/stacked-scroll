@@ -1,14 +1,14 @@
 {
-  "name": "paged-scroll",
+  "name": "stacked-scroll",
   "version": "1.0.0",
-  "description": "A small, hardened library for the newspaper page-turn scroll effect using GSAP ScrollTrigger.",
+  "description": "A small, hardened library for the stacked-pages scroll effect using GSAP ScrollTrigger.",
   "type": "module",
-  "main": "./dist/paged-scroll.umd.cjs",
-  "module": "./dist/paged-scroll.js",
+  "main": "./dist/stacked-scroll.umd.cjs",
+  "module": "./dist/stacked-scroll.js",
   "exports": {
     ".": {
-      "import": "./dist/paged-scroll.js",
-      "require": "./dist/paged-scroll.umd.cjs"
+      "import": "./dist/stacked-scroll.js",
+      "require": "./dist/stacked-scroll.umd.cjs"
     }
   },
   "files": [
@@ -27,8 +27,8 @@
     "scroll",
     "pin",
     "section",
-    "page-turn",
-    "paged-scroll"
+    "stacked-pages",
+    "stacked-scroll"
   ],
   "author": "",
   "license": "MIT",

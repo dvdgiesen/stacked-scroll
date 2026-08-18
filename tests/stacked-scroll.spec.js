@@ -6,7 +6,7 @@ async function waitForScroller(page) {
   await page.waitForFunction(() => typeof window.scroller !== 'undefined' && window.scroller !== null);
 }
 
-test.describe('PagedScroll demo', () => {
+test.describe('StackedScroll demo', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/demo/');
     await page.waitForLoadState('networkidle');

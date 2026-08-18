@@ -5,8 +5,8 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.js'),
-      name: 'PagedScroll',
-      fileName: 'paged-scroll',
+      name: 'StackedScroll',
+      fileName: 'stacked-scroll',
       formats: ['es', 'umd']
     },
     rollupOptions: {

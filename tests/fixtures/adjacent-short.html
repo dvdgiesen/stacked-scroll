@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PagedScroll adjacent-short regression fixture</title>
+  <title>StackedScroll adjacent-short regression fixture</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; }
@@ -69,14 +69,14 @@
 
   <script src="/node_modules/gsap/dist/gsap.min.js"></script>
   <script src="/node_modules/gsap/dist/ScrollTrigger.min.js"></script>
-  <script src="../../dist/paged-scroll.umd.cjs"></script>
+  <script src="../../dist/stacked-scroll.umd.cjs"></script>
   <script>
     function initScroller() {
-      if (typeof window.gsap === 'undefined' || typeof window.ScrollTrigger === 'undefined' || typeof window.PagedScroll === 'undefined') {
+      if (typeof window.gsap === 'undefined' || typeof window.ScrollTrigger === 'undefined' || typeof window.StackedScroll === 'undefined') {
         setTimeout(initScroller, 50);
         return;
       }
-      window.scroller = new PagedScroll({
+      window.scroller = new StackedScroll({
         sections: '.panel',
         headerSelector: '.header',
         mainSelector: '.main'

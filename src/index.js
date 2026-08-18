@@ -1,3 +1,3 @@
-import { PagedScroll } from './PagedScroll.js';
+import { StackedScroll } from './StackedScroll.js';
 
-export { PagedScroll as default };
+export { StackedScroll as default };

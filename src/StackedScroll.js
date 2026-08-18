@@ -2,15 +2,15 @@ import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 
 /**
- * PagedScroll — a hardened, framework-agnostic library for the
- * "newspaper page-turn" scroll effect built on GSAP ScrollTrigger.
+ * StackedScroll — a hardened, framework-agnostic library for the
+ * "stacked-pages" scroll effect built on GSAP ScrollTrigger.
  *
- * Extracted from the RotYounges website, with the fragile edge cases
+ * Extracted from rotyounges.com, with the fragile edge cases
  * (short last panel flush-top, deep-link offset under pinned sections,
  * previous panel release on the final transition) generalized into a
  * reusable module.
  */
-export class PagedScroll {
+export class StackedScroll {
   /**
    * @param {Object} options
    * @param {string | HTMLElement | NodeList | HTMLElement[]} [options.sections='.panel']
@@ -21,7 +21,7 @@ export class PagedScroll {
    * @param {string} [options.scrollBehavior='smooth']
    * @param {number | null} [options.hideHeadersBelow=null]
    *        Viewport height (px) below which section headers are hidden/collapsed.
-   * @param {string} [options.compactClassName='paged-scroll-compact']
+   * @param {string} [options.compactClassName='stacked-scroll-compact']
    *        Class added to <html> when the viewport is below hideHeadersBelow.
    */
   constructor(options = {}) {
@@ -33,7 +33,7 @@ export class PagedScroll {
       resizeDebounceMs: options.resizeDebounceMs ?? 200,
       scrollBehavior: options.scrollBehavior ?? 'smooth',
       hideHeadersBelow: options.hideHeadersBelow ?? null,
-      compactClassName: options.compactClassName ?? 'paged-scroll-compact'
+      compactClassName: options.compactClassName ?? 'stacked-scroll-compact'
     };
 
     this.sections = [];
@@ -51,13 +51,13 @@ export class PagedScroll {
 
   /**
    * Set up ScrollTriggers, spacer, and listeners.
-   * @returns {PagedScroll}
+   * @returns {StackedScroll}
    */
   init() {
     this.sections = this._resolveSections(this.config.sections);
 
     if (this.sections.length === 0) {
-      console.warn('PagedScroll: no sections found for selector', this.config.sections);
+      console.warn('StackedScroll: no sections found for selector', this.config.sections);
       return this;
     }
 
@@ -84,13 +84,13 @@ export class PagedScroll {
   scrollTo(target, options = {}) {
     const section = this._resolveTargetSection(target);
     if (!section) {
-      console.warn('PagedScroll.scrollTo: target not found', target);
+      console.warn('StackedScroll.scrollTo: target not found', target);
       return;
     }
 
     const offsetElement = this._resolveOffsetElement(section, options.offsetElement);
     if (!offsetElement) {
-      console.warn('PagedScroll.scrollTo: no offset element found for target', target);
+      console.warn('StackedScroll.scrollTo: no offset element found for target', target);
       return;
     }
 
@@ -163,7 +163,7 @@ export class PagedScroll {
     }
 
     this.spacer = document.createElement('div');
-    this.spacer.id = 'paged-scroll-end-spacer';
+    this.spacer.id = 'stacked-scroll-end-spacer';
     this.spacer.setAttribute('aria-hidden', 'true');
     this.spacer.style.pointerEvents = 'none';
     this.spacer.style.visibility = 'hidden';
@@ -301,7 +301,7 @@ export class PagedScroll {
   _sectionsSelectorString() {
     return typeof this.config.sections === 'string'
       ? this.config.sections
-      : '.paged-scroll-section';
+      : '.stacked-scroll-section';
   }
 
   _resolveOffsetElement(section, override) {
