@@ -332,10 +332,11 @@
       </div>
       <p class="lead">Scroll down. Each section behaves like a page in a stack of papers: read through the content while the header stays pinned, then the next page slides up to take its place.</p>
       <div class="rule"></div>
-      <p>This demo uses <strong>StackedScroll</strong>, a tiny GSAP ScrollTrigger wrapper extracted from rotyounges.com. It solves the two edge cases that break every naive implementation:</p>
+      <p>This demo uses <strong>StackedScroll</strong>, a tiny GSAP ScrollTrigger wrapper extracted from rotyounges.com. It solves the edge cases that break every naive implementation:</p>
       <ul class="features">
-        <li><strong>Short last panel</strong> — an invisible spacer guarantees the final section can scroll flush to the top, even when its content is shorter than the viewport.</li>
         <li><strong>Deep links</strong> — the robust <code>scrollTo()</code> calculation never walks the <code>offsetParent</code> chain, so pinned sections cannot corrupt the target position.</li>
+        <li><strong>Short last panel</strong> — an invisible spacer guarantees the final section can scroll flush to the top, even when its content is shorter than the viewport.</li>
+        <li><strong>Final transition</strong> — the previous panel's pin ends cleanly at the last transition, so headers never overlap.</li>
         <li><strong>Constraint</strong> — two consecutive short panels are not supported in v1; this demo avoids them.</li>
       </ul>
       <a href="#longread" class="button" onclick="event.preventDefault(); scroller.scrollTo('longread')">Start reading</a>
@@ -362,6 +363,7 @@
       <p class="lead">This section is taller than your viewport. Scroll through its body first. Only once you reach the bottom does the next section begin to slide over it.</p>
       <div class="rule"></div>
       <p>That is the core difference between this effect and a simple sticky header. With sticky positioning alone, the header releases as soon as its container scrolls out. Here, the entire panel stays visually locked until you have consumed its content, producing a hard cut to the next section.</p>
+      <h3>How the deep-link fix works</h3>
       <div class="content-stream">
         <article>
           <h4>01 — Pin start logic</h4>
@@ -388,6 +390,8 @@
           <p>Each <code>scrollTo()</code> call subtracts the target section's own header height, so the pinned header never obscures the destination.</p>
         </article>
       </div>
+      <div class="rule"></div>
+      <p class="lead">Try it: open the ☰ menu and tap <strong>Gallery</strong> — that is a deep link, powered by the same <code>scrollTo()</code> calculation.</p>
     </main>
   </section>
 
@@ -411,6 +415,7 @@
       <p class="lead">This panel's content is shorter than the viewport, so it pins immediately at the top. The next section will slide up over it as soon as you scroll.</p>
       <div class="rule"></div>
       <p>Use the nav to jump away and back — the landing position is computed from each panel's natural height, not its live pinned offset.</p>
+      <p><em>Constraint: the Gallery section is tall enough to continue scrolling. Two short panels in a row are not supported in v1; this demo avoids them.</em></p>
       <a href="#gallery" class="button" onclick="event.preventDefault(); scroller.scrollTo('gallery')">Next: Gallery</a>
     </main>
   </section>
@@ -468,7 +473,8 @@
       <p class="lead">Because this last panel's content is shorter than the viewport, the browser cannot scroll it to the top on its own.</p>
       <div class="rule"></div>
       <p>StackedScroll adds an invisible spacer at the end of the document, sized to exactly the missing height. Try resizing your browser — the spacer recalculates on every resize.</p>
-      <a href="#cover" class="button" onclick="event.preventDefault(); scroller.scrollTo('cover')">Back to top</a>
+      <p><em>Final transition: when the previous panel reaches the end of its pinned range, it releases cleanly so the Contact header cannot overlap it.</em></p>
+      <a href="#cover" class="button" onclick="event.preventDefault(); scroller.scrollTo('cover')">Back to top (deep link)</a>
     </main>
   </section>
 
