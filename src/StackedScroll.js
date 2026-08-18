@@ -98,8 +98,17 @@ export class StackedScroll {
     const docTop = this._computeDocTop(section, offsetElement);
     const headerOffset = this._computeHeaderOffset(section);
 
+    let targetY = Math.max(0, docTop - headerOffset);
+
+    // Short panels start pinning at the top of their natural range. Landing
+    // exactly on that boundary can leave the element static in some browsers,
+    // so nudge just inside the pin range to guarantee an active pin.
+    if (section.offsetHeight < this._getViewportHeight()) {
+      targetY += 1;
+    }
+
     window.scrollTo({
-      top: Math.max(0, docTop - headerOffset),
+      top: targetY,
       behavior: this._prefersReducedMotion() ? 'auto' : (options.behavior ?? this.config.scrollBehavior)
     });
   }
@@ -198,7 +207,12 @@ export class StackedScroll {
         buffer.setAttribute('aria-hidden', 'true');
         buffer.style.pointerEvents = 'none';
         buffer.style.visibility = 'hidden';
-        section.after(buffer);
+        // Insert the buffer AFTER the current section's outermost wrapper. At
+        // init the section is not yet pinned, so this is the section itself.
+        // Once ScrollTrigger wraps it in a pin-spacer, we insert after that
+        // spacer so the buffer still contributes to document flow.
+        const wrapper = section.closest('.pin-spacer') || section;
+        wrapper.after(buffer);
         buffer.style.height = `${viewportHeight - section.offsetHeight}px`;
         this.buffers.set(i, buffer);
       }

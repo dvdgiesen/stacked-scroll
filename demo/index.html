@@ -35,6 +35,12 @@
       border-bottom: 2px solid var(--rule);
     }
 
+    /* Genuinely short panels (shorter than the viewport). Use sparingly for demo
+       sections whose height must be measured by content, not forced to 100vh. */
+    .genuinely-short {
+      min-height: auto;
+    }
+
     .panel:last-of-type {
       border-bottom: none;
     }
@@ -321,6 +327,7 @@
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'briefing')">Briefing</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
       </nav>
@@ -354,6 +361,7 @@
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'briefing')">Briefing</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
       </nav>
@@ -396,17 +404,18 @@
     </main>
   </section>
 
-  <section class="panel short" id="highlight">
+  <section class="panel short genuinely-short" id="highlight">
     <header class="header">
       <div class="header__bar">
         <span class="header__title">The Highlight</span>
-        <span class="header__kicker">Short section</span>
+        <span class="header__kicker">Genuinely short section</span>
         <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
       </div>
       <nav class="mobile-nav" aria-label="Navigation">
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'briefing')">Briefing</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
       </nav>
@@ -415,8 +424,32 @@
       <h2>Short section</h2>
       <p class="lead">This panel's content is shorter than the viewport, so it pins immediately at the top. The next section will slide up over it as soon as you scroll.</p>
       <div class="rule"></div>
-      <p>Use the nav to jump away and back — the landing position is computed from each panel's natural height, not its live pinned offset.</p>
-      <p><em>The Gallery section is tall enough to continue scrolling. Adjacent short panels are handled automatically with a synthetic settle buffer.</em></p>
+      <p>The panel below is also shorter than the viewport. Without a fix, their pinned states would overlap and the first section would appear to be dragged along.</p>
+      <a href="#briefing" class="button" onclick="event.preventDefault(); scroller.scrollTo('briefing')">Next: Briefing</a>
+    </main>
+  </section>
+
+  <section class="panel short genuinely-short" id="briefing">
+    <header class="header">
+      <div class="header__bar">
+        <span class="header__title">The Briefing</span>
+        <span class="header__kicker">Adjacent short section</span>
+        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+      </div>
+      <nav class="mobile-nav" aria-label="Navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'briefing')">Briefing</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
+      </nav>
+    </header>
+    <main class="main">
+      <h2>Adjacent short section</h2>
+      <p class="lead">This is the second short panel in a row. The previous one released before this one pinned, because an invisible settle buffer sits between them.</p>
+      <div class="rule"></div>
+      <p>StackedScroll detects when two consecutive sections are both shorter than the viewport and injects a spacer with height <code>viewportHeight &minus; sectionHeight</code>. That creates a full viewport of scroll distance for the handoff to complete.</p>
       <a href="#gallery" class="button" onclick="event.preventDefault(); scroller.scrollTo('gallery')">Next: Gallery</a>
     </main>
   </section>
@@ -432,6 +465,7 @@
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'briefing')">Briefing</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
       </nav>
@@ -440,7 +474,7 @@
       <h2>Visual rhythm</h2>
       <p class="lead">Mixing tall and short panels gives editorial rhythm without breaking the physics of the scroll. Tall panels are read; short panels are seen.</p>
       <div class="rule"></div>
-      <p>Because the spacer is sized generically against the last panel, reordering sections does not require code changes. The demo deliberately places a short panel last to prove the spacer fix.</p>
+      <p>The two short panels you scrolled through above are followed by this tall section. If they were placed back-to-back, the first pin would try to release at the same moment the second one engaged. StackedScroll inserted an invisible settle buffer between them so the handoff stays clean.</p>
       <div class="gallery-grid">
         <figure>Plate 01</figure>
         <figure>Plate 02</figure>
@@ -465,6 +499,7 @@
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'briefing')">Briefing</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
         <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
       </nav>
