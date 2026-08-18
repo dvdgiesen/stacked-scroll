@@ -334,7 +334,7 @@
       <div class="rule"></div>
       <p>This demo uses <strong>StackedScroll</strong>, a tiny GSAP ScrollTrigger wrapper extracted from rotyounges.com. It solves the edge cases that break every naive implementation:</p>
       <ul class="features">
-        <li><strong>Deep links</strong> — the robust <code>scrollTo()</code> calculation never walks the <code>offsetParent</code> chain, so pinned sections cannot corrupt the target position.</li>
+        <li><strong>Deep links</strong> — the robust <code>scrollTo()</code> calculation never walks the <code>offsetParent</code> chain, so pinned sections cannot corrupt the target position, whether you are linking to a section top or an element halfway down the page.</li>
         <li><strong>Short last panel</strong> — an invisible spacer guarantees the final section can scroll flush to the top, even when its content is shorter than the viewport.</li>
         <li><strong>Final transition</strong> — the previous panel's pin ends cleanly at the last transition, so headers never overlap.</li>
         <li><strong>Constraint</strong> — two consecutive short panels are not supported in v1; this demo avoids them.</li>
@@ -365,33 +365,34 @@
       <p>That is the core difference between this effect and a simple sticky header. With sticky positioning alone, the header releases as soon as its container scrolls out. Here, the entire panel stays visually locked until you have consumed its content, producing a hard cut to the next section.</p>
       <h3>How the deep-link fix works</h3>
       <div class="content-stream">
-        <article>
+        <article id="article-01">
           <h4>01 — Pin start logic</h4>
           <p>If a panel is shorter than the viewport, it pins immediately at <code>start: "top top"</code>. If it is taller, it waits until its own bottom reaches the viewport bottom with <code>start: "bottom bottom"</code>.</p>
         </article>
-        <article>
+        <article id="article-02">
           <h4>02 — pinSpacing: false</h4>
           <p>By disabling ScrollTrigger's default reserved scroll space, the next panel can slide up and cover the pinned one the moment the handoff begins.</p>
         </article>
-        <article>
+        <article id="article-03">
           <h4>03 — The offsetParent trap</h4>
           <p>When GSAP pins a panel, it sets <code>position: fixed</code>. That makes <code>offsetTop</code> and <code>offsetParent</code> unreliable for computing a target's document position — the classic deep-link bug. StackedScroll avoids them entirely.</p>
         </article>
-        <article>
+        <article id="article-04">
           <h4>04 — Natural height sum</h4>
           <p><code>offsetHeight</code> is a panel's own natural size; fixed positioning changes its offset, never its size. Summing preceding panels gives the target panel's true document top.</p>
         </article>
-        <article>
+        <article id="article-05">
           <h4>05 — Same-tick rect diff</h4>
           <p><code>getBoundingClientRect()</code> on the target and its panel share the same live viewport coordinate space. Their difference is the target's true offset within its panel.</p>
         </article>
-        <article>
+        <article id="article-06">
           <h4>06 — Header compensation</h4>
           <p>Each <code>scrollTo()</code> call subtracts the target section's own header height, so the pinned header never obscures the destination.</p>
         </article>
       </div>
       <div class="rule"></div>
-      <p class="lead">Try it: open the ☰ menu and tap <strong>Gallery</strong> — that is a deep link, powered by the same <code>scrollTo()</code> calculation.</p>
+      <p class="lead">Try it: open the ☰ menu and tap <strong>Gallery</strong> — that is a deep link to a section top.</p>
+      <p>Or jump straight to a mid-section element: <a href="#article-04" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-04' })">04 — Natural height sum</a>, <a href="#article-05" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-05' })">05 — Same-tick rect diff</a>. The same `scrollTo()` calculation lands on the element, not just the section top.</p>
     </main>
   </section>
 
