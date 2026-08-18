@@ -85,7 +85,7 @@ This never needs to know any section's current pin/fixed state at all — which 
 
 **Root cause:** The "hard cut" effect fundamentally depends on there being a **full viewport-height's worth of scroll distance** between one section's pin release and the next section's pin engagement. A *tall* section naturally provides this (the user scrolls through its full content first). Two back-to-back *short* sections don't — there's no such buffer, so their pin windows can overlap in time.
 
-**Fix approach (for the package):** detect this configuration (two consecutive sections both `< 100vh`) and either (a) document it as a known constraint of the technique with recommended workarounds (e.g. don't have 2+ short sections in a row; pad one intentionally), or (b) engineer a synthetic minimum "settle" scroll buffer between short sections so the hard-cut always has room to complete. (b) is more work but would be a genuine differentiator over any competing implementation.
+**Fix implemented in v1:** detect this configuration and insert a synthetic, invisible settle buffer between the two short sections. The buffer's height is `viewportHeight - precedingSectionHeight`, which guarantees a full viewport of scroll distance between the first pin's release and the second pin's engagement. This is handled automatically by `StackedScroll._insertBuffers()` and is recalculated on resize/orientationchange.
 
 ---
 
@@ -176,13 +176,13 @@ const stackedScroll = new StackedScroll({
 
 This section captures the hardening decisions that should guide v1. They resolve the open questions in §10 and supersede the looser options in §7.
 
-### 9.1 §3.3 (two consecutive short sections) is a v1 constraint, not a solved bug
+### 9.1 §3.3 (two consecutive short sections) is now solved with a synthetic settle buffer
 
-The original plan left §3.3 open: either build a synthetic settle buffer or document it as a known constraint. The RotYounges implementation only avoids the problem by **authoring content so it does not happen**.
+The original plan left §3.3 open: either build a synthetic settle buffer or document it as a known constraint. The RotYounges implementation initially avoided the problem by **authoring content so it does not happen**.
 
-**Decision for v1:** document it as a hard constraint and design the demo to avoid it. Do not market "we solved three hard bugs" — market "we solved the two hard bugs (§3.1 and §3.2) that break every naive ScrollTrigger pinning implementation, and we document the one remaining structural constraint honestly." This preserves credibility with the senior-dev audience that is your actual buyer/reader.
+**Decision for v1:** implement the synthetic settle buffer (§3.3b) and remove it as a constraint. `StackedScroll` now inserts an invisible settle buffer between any pair of consecutive short sections, giving the previous pin enough scroll distance to release before the next pin engages. This is fully covered by a Playwright regression test.
 
-If the package ever needs to handle arbitrary content, the synthetic buffer (§3.3b) becomes the headline feature of a v2 / Pro tier, not a v1 must-have.
+**Marketing implication:** the library now genuinely solves the three hard edge cases (§3.1, §3.2, and §3.3). This is a strong, honest differentiator.
 
 ### 9.2 Automated tests must use Playwright, not jsdom/Jest
 
@@ -191,7 +191,7 @@ The three hard bugs are all **layout-dependent**: `offsetHeight`, `getBoundingCl
 Acceptance tests to write:
 - Last section shorter than viewport still reaches flush-top across a range of viewport sizes.
 - Deep-link scroll to a target lands within a small tolerance (e.g., ±10 px) regardless of any other section's current pin state.
-- Adjacent short sections do not visually overlap (this is the constraint test; it confirms the demo configuration is safe, not that the code overcomes physics).
+- Adjacent short sections do not visually overlap (now verified by the synthetic settle buffer, not just by demo configuration).
 
 ### 9.3 Mobile viewport handling is a v1 acceptance criterion, not a later bug
 

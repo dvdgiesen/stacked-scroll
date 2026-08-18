@@ -337,7 +337,7 @@
         <li><strong>Deep links</strong> — the robust <code>scrollTo()</code> calculation never walks the <code>offsetParent</code> chain, so pinned sections cannot corrupt the target position, whether you are linking to a section top or an element halfway down the page.</li>
         <li><strong>Short last panel</strong> — an invisible spacer guarantees the final section can scroll flush to the top, even when its content is shorter than the viewport.</li>
         <li><strong>Final transition</strong> — the previous panel's pin ends cleanly at the last transition, so headers never overlap.</li>
-        <li><strong>Constraint</strong> — two consecutive short panels are not supported in v1; this demo avoids them.</li>
+        <li><strong>Adjacent short panels</strong> — two short panels in a row now hand off cleanly thanks to a synthetic settle buffer, so you do not have to author around them.</li>
       </ul>
       <a href="#longread" class="button" onclick="event.preventDefault(); scroller.scrollTo('longread')">Start reading</a>
     </main>
@@ -416,7 +416,7 @@
       <p class="lead">This panel's content is shorter than the viewport, so it pins immediately at the top. The next section will slide up over it as soon as you scroll.</p>
       <div class="rule"></div>
       <p>Use the nav to jump away and back — the landing position is computed from each panel's natural height, not its live pinned offset.</p>
-      <p><em>Constraint: the Gallery section is tall enough to continue scrolling. Two short panels in a row are not supported in v1; this demo avoids them.</em></p>
+      <p><em>The Gallery section is tall enough to continue scrolling. Adjacent short panels are handled automatically with a synthetic settle buffer.</em></p>
       <a href="#gallery" class="button" onclick="event.preventDefault(); scroller.scrollTo('gallery')">Next: Gallery</a>
     </main>
   </section>

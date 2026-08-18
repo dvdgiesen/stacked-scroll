@@ -38,6 +38,7 @@ export class StackedScroll {
 
     this.sections = [];
     this.triggers = [];
+    this.buffers = new Map();
     this.spacer = null;
     this.resizeTimer = null;
 
@@ -134,6 +135,8 @@ export class StackedScroll {
       this.spacer = null;
     }
 
+    this._removeBuffers();
+
     document.documentElement.classList.remove(this.config.compactClassName);
 
     this.sections = [];
@@ -170,7 +173,46 @@ export class StackedScroll {
     document.body.appendChild(this.spacer);
   }
 
+  /**
+   * Insert invisible settle buffers between any pair of consecutive short
+   * sections (shorter than the viewport). Short panels back-to-back don't
+   * provide enough natural scroll distance for the previous pin to release
+   * before the next one engages, so we synthesise a full viewport of room.
+   */
+  _insertBuffers() {
+    this._removeBuffers();
+
+    const viewportHeight = this._getViewportHeight();
+
+    for (let i = 0; i < this.sections.length - 1; i++) {
+      const section = this.sections[i];
+      const nextSection = this.sections[i + 1];
+      if (!section || !nextSection) continue;
+
+      const sectionShort = section.offsetHeight <= viewportHeight;
+      const nextShort = nextSection.offsetHeight <= viewportHeight;
+
+      if (sectionShort && nextShort) {
+        const buffer = document.createElement('div');
+        buffer.className = 'stacked-scroll-buffer';
+        buffer.setAttribute('aria-hidden', 'true');
+        buffer.style.pointerEvents = 'none';
+        buffer.style.visibility = 'hidden';
+        section.after(buffer);
+        buffer.style.height = `${viewportHeight - section.offsetHeight}px`;
+        this.buffers.set(i, buffer);
+      }
+    }
+  }
+
+  _removeBuffers() {
+    this.buffers.forEach((buffer) => buffer.remove());
+    this.buffers.clear();
+  }
+
   _createTriggers() {
+    this._insertBuffers();
+
     this.sections.forEach((section) => {
       const trigger = ScrollTrigger.create({
         trigger: section,
@@ -216,6 +258,10 @@ export class StackedScroll {
     let sum = 0;
     for (let i = 0; i <= idx; i++) {
       sum += this.sections[i].offsetHeight;
+      // Include any synthetic settle buffer inserted after this section
+      // (present when this section and the next are both short).
+      const buffer = this.buffers.get(i);
+      if (buffer) sum += buffer.offsetHeight;
     }
     return sum;
   }
@@ -247,6 +293,7 @@ export class StackedScroll {
   }
 
   _handleLoad() {
+    this._insertBuffers();
     this._updateCompactState();
     this._updateSpacer();
     ScrollTrigger.refresh();
@@ -255,6 +302,7 @@ export class StackedScroll {
   _handleResize() {
     clearTimeout(this.resizeTimer);
     this.resizeTimer = setTimeout(() => {
+      this._insertBuffers();
       this._updateCompactState();
       this._updateSpacer();
       ScrollTrigger.refresh();
@@ -265,6 +313,7 @@ export class StackedScroll {
     // visualViewport may not report the final size immediately after a
     // device rotation; defer the recalculation so the spacer stays correct.
     setTimeout(() => {
+      this._insertBuffers();
       this._updateCompactState();
       this._updateSpacer();
       ScrollTrigger.refresh();
@@ -314,11 +363,15 @@ export class StackedScroll {
   }
 
   _computeDocTop(section, offsetElement) {
-    // Sum natural (unpinned) heights of every section BEFORE the target.
+    // Sum natural (unpinned) heights of every section BEFORE the target,
+    // including any synthetic settle buffers inserted between them.
     let cumulativeHeight = 0;
-    for (const s of this.sections) {
+    for (let i = 0; i < this.sections.length; i++) {
+      const s = this.sections[i];
       if (s === section) break;
       cumulativeHeight += s.offsetHeight;
+      const buffer = this.buffers.get(i);
+      if (buffer) cumulativeHeight += buffer.offsetHeight;
     }
 
     // The target's position within its own section, measured in the same

@@ -240,4 +240,32 @@ test.describe('Adjacent short panels regression', () => {
 
     expect(Math.abs(offset)).toBeLessThanOrEqual(TOLERANCE);
   });
+
+  test('two adjacent short panels hand off cleanly without overlap', async ({ page }) => {
+    await page.goto('/tests/fixtures/adjacent-short.html');
+    await page.waitForLoadState('networkidle');
+    await waitForScroller(page);
+
+    // Scroll to panel B. The synthetic settle buffer should ensure panel A
+    // has released by the time B pins, so they never share the fixed layer.
+    await page.evaluate(() => window.scroller.scrollTo('b', { behavior: 'auto' }));
+    await page.waitForTimeout(100);
+
+    const result = await page.evaluate(() => {
+      const a = document.getElementById('a');
+      const b = document.getElementById('b');
+      return {
+        aPosition: window.getComputedStyle(a).position,
+        bTop: b.getBoundingClientRect().top,
+        bPosition: window.getComputedStyle(b).position,
+      };
+    });
+
+    // B should be pinned flush at the top of the viewport.
+    expect(Math.abs(result.bTop)).toBeLessThanOrEqual(TOLERANCE);
+    expect(result.bPosition).toBe('fixed');
+
+    // A should have released; it must not still be position:fixed.
+    expect(result.aPosition).not.toBe('fixed');
+  });
 });
