@@ -5,19 +5,30 @@
   "type": "module",
   "main": "./dist/stacked-scroll.umd.cjs",
   "module": "./dist/stacked-scroll.js",
+  "types": "./index.d.ts",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "import": "./dist/stacked-scroll.js",
       "require": "./dist/stacked-scroll.umd.cjs"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "index.d.ts",
+    "CHANGELOG.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dvdgiesen/stacked-scroll.git"
+  },
+  "homepage": "https://github.com/dvdgiesen/stacked-scroll#readme",
+  "bugs": "https://github.com/dvdgiesen/stacked-scroll/issues",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "prepack": "npm run build",
     "pretest:e2e": "npm run build",
     "test:e2e": "playwright test"
   },
@@ -26,11 +37,19 @@
     "scrolltrigger",
     "scroll",
     "pin",
+    "pinned-sections",
     "section",
     "stacked-pages",
-    "stacked-scroll"
+    "stacked-scroll",
+    "fullpage",
+    "full-page-scroll",
+    "scroll-effect",
+    "editorial",
+    "scrollytelling",
+    "deep-link",
+    "scroll-jacking-alternative"
   ],
-  "author": "",
+  "author": "Dirk van der Giesen <dvdgiesen@yahoo.com>",
   "license": "MIT",
   "peerDependencies": {
     "gsap": "^3.12.0"
