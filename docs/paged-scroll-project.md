@@ -34,31 +34,17 @@ This is the "generic 80%" — straightforward once you know the two rules above.
 
 ---
 
-## 3. The Three Hard Bugs We Solved (This Is the Real IP)
+## 3. The Hard Bugs We Solved (This Is the Real IP)
 
 This section is the actual differentiated value of a potential package — the stuff that isn't obvious until you hit it in production.
 
-### 3.1 Two Consecutive Short Sections "Drag" Each Other Into View
+The README and demo present these in the order users experience them: **deep links → short last panel → final transition → adjacent-short constraint**. This section keeps the detailed analysis in that same order.
 
-**Symptom:** When two adjacent sections are *both* shorter than the viewport, scrolling from the first into the second doesn't give a clean hard-cut — the first section's pin can still be releasing/overlapping while the second is already becoming visible, so it looks like the first one is being "dragged along" into view rather than cutting away cleanly.
-
-**Root cause:** The "hard cut" effect fundamentally depends on there being a **full viewport-height's worth of scroll distance** between one section's pin release and the next section's pin engagement. A *tall* section naturally provides this (the user scrolls through its full content first). Two back-to-back *short* sections don't — there's no such buffer, so their pin windows can overlap in time.
-
-**Fix approach (for the package):** detect this configuration (two consecutive sections both `< 100vh`) and either (a) document it as a known constraint of the technique with recommended workarounds (e.g. don't have 2+ short sections in a row; pad one intentionally), or (b) engineer a synthetic minimum "settle" scroll buffer between short sections so the hard-cut always has room to complete. (b) is more work but would be a genuine differentiator over any competing implementation.
-
-### 3.2 Last Section Shorter Than Viewport → Physically Impossible to Scroll Flush-to-Top
-
-**Symptom:** If the *last* section in the page is shorter than the viewport, on larger screens its top can never reach the top of the browser window — no matter how you fix scroll offsets in JS, there just isn't enough page below it to scroll that far.
-
-**Root cause:** With `pinSpacing: false`, total document scroll height is just the natural stacked height of all sections — nothing reserves extra space for pins. The browser's maximum possible scroll position is `documentHeight - viewportHeight`. If the last section is shorter than the viewport, that maximum falls short of the section's natural top by exactly `viewportHeight - sectionHeight`. This is a **hard physical scrolling limit**, not a timing bug — and it also confuses any "scroll to this section" JS, because the browser silently clamps the requested scroll position.
-
-**Fix:** append an **invisible spacer element** at the very end of the document (outside all sections). Measure the shortfall (`viewportHeight - lastSectionHeight`) on load and on resize, and set the spacer's height to exactly that amount. This gives the browser just enough extra (non-visible, non-layout-affecting) scroll room to reach flush-top on any screen size, without adding visible whitespace inside the section's own design.
-
-### 3.3 Deep-Link / "Scroll To Section" Breaks Because of `position: fixed`'s Effect on `offsetParent`
+### 3.1 Deep-Link / "Scroll To Section" Breaks Because of `position: fixed`'s Effect on `offsetParent`
 
 **Symptom (the big one — took 3 attempts to fully solve on RotYounges):** Clicking a nav link / logo / anchor meant to jump to a specific section sometimes (or, in one specific adjacent-short-sections case, *consistently*) scrolled all the way to the very top of the page instead of the intended target.
 
-**Root cause:** The naive way to compute "how far down the document is this element" is to walk up the `offsetParent` chain, summing `element.offsetTop` at each level. This is a common, normally-reliable pattern — **except** per spec, both `offsetTop` and `offsetParent` become unreliable the instant *any* element in that ancestor chain has `position: fixed`. `offsetTop` starts reporting the fixed-positioned offset instead of the true document position, and `offsetParent` returns `null` early, silently truncating the walk. Since our pinned sections are set to `position: fixed` by GSAP while pinned, and adjacent short sections' pins can still be active at the moment a link is clicked (see 3.1), this bug bit exactly the "jump to the next short section" case — landing near `top: 0`, which visually looks like "jumped to Home," but is really just what a badly truncated calculation happens to produce.
+**Root cause:** The naive way to compute "how far down the document is this element" is to walk up the `offsetParent` chain, summing `element.offsetTop` at each level. This is a common, normally-reliable pattern — **except** per spec, both `offsetTop` and `offsetParent` become unreliable the instant *any* element in that ancestor chain has `position: fixed`. `offsetTop` starts reporting the fixed-positioned offset instead of the true document position, and `offsetParent` returns `null` early, silently truncating the walk. Since our pinned sections are set to `position: fixed` by GSAP while pinned, and adjacent short sections' pins can still be active at the moment a link is clicked (see §3.3), this bug bit exactly the "jump to the next short section" case — landing near `top: 0`, which visually looks like "jumped to Home," but is really just what a badly truncated calculation happens to produce.
 
 **Two blind-fix attempts that failed (documented so the package's design avoids repeating them):**
 1. Adding a synchronous `ScrollTrigger.refresh()` call inside the scroll function, hoping to force fresh measurements — this actually made things *worse*, because `refresh()` has to temporarily un-pin/re-pin the active section to remeasure, and that revert/reapply cycle could itself corrupt the pin bookkeeping right as the scroll target was being computed.
@@ -83,6 +69,24 @@ const docTop = cumulativeHeight + offsetWithinSection;
 ```
 This never needs to know any section's current pin/fixed state at all — which is exactly why it doesn't share the fragility of the two failed attempts above. **This is the single most valuable, hardest-won piece of IP from the RotYounges build**, and should be the headline "we solved the hard part" pitch for the package.
 
+### 3.2 Last Section Shorter Than Viewport → Physically Impossible to Scroll Flush-to-Top
+
+**Symptom:** If the *last* section in the page is shorter than the viewport, on larger screens its top can never reach the top of the browser window — no matter how you fix scroll offsets in JS, there just isn't enough page below it to scroll that far.
+
+**Root cause:** With `pinSpacing: false`, total document scroll height is just the natural stacked height of all sections — nothing reserves extra space for pins. The browser's maximum possible scroll position is `documentHeight - viewportHeight`. If the last section is shorter than the viewport, that maximum falls short of the section's natural top by exactly `viewportHeight - sectionHeight`. This is a **hard physical scrolling limit**, not a timing bug — and it also confuses any "scroll to this section" JS, because the browser silently clamps the requested scroll position.
+
+**Fix:** append an **invisible spacer element** at the very end of the document (outside all sections). Measure the shortfall (`viewportHeight - lastSectionHeight`) on load and on resize, and set the spacer's height to exactly that amount. This gives the browser just enough extra (non-visible, non-layout-affecting) scroll room to reach flush-top on any screen size, without adding visible whitespace inside the section's own design.
+
+**Final transition:** the same short-last-panel scenario can leave the previous panel's pin `end` exactly on the document's maximum scroll position, so GSAP can never scroll past it and the panel stays `position: fixed`. The fix is to clamp every non-final pin end to just below `maxScroll` so the handoff always completes.
+
+### 3.3 Two Consecutive Short Sections "Drag" Each Other Into View
+
+**Symptom:** When two adjacent sections are *both* shorter than the viewport, scrolling from the first into the second doesn't give a clean hard-cut — the first section's pin can still be releasing/overlapping while the second is already becoming visible, so it looks like the first one is being "dragged along" into view rather than cutting away cleanly.
+
+**Root cause:** The "hard cut" effect fundamentally depends on there being a **full viewport-height's worth of scroll distance** between one section's pin release and the next section's pin engagement. A *tall* section naturally provides this (the user scrolls through its full content first). Two back-to-back *short* sections don't — there's no such buffer, so their pin windows can overlap in time.
+
+**Fix approach (for the package):** detect this configuration (two consecutive sections both `< 100vh`) and either (a) document it as a known constraint of the technique with recommended workarounds (e.g. don't have 2+ short sections in a row; pad one intentionally), or (b) engineer a synthetic minimum "settle" scroll buffer between short sections so the hard-cut always has room to complete. (b) is more work but would be a genuine differentiator over any competing implementation.
+
 ---
 
 ## 4. Proposed Architecture (GSAP-Based Edition — Build This First)
@@ -95,14 +99,14 @@ const stackedScroll = new StackedScroll({
   sections: '.panel',       // selector or NodeList/Array of section elements
   headerSelector: '.header',// selector (scoped per-section) for the pinned header, for offset calc
   mainSelector: '.main',    // selector (scoped per-section) for the default scroll target within a section
-  minHeightBufferMs: 0,     // (see §3.1) optional synthetic settle buffer between short sections
+  minHeightBufferMs: 0,     // (see §3.3) optional synthetic settle buffer between short sections
 });
 ```
 
 ### Public API (draft)
 - `init()` — sets up `ScrollTrigger.create(...)` for every section using the two-case `start` logic, wires the scroll-end spacer, wires resize/load listeners.
-- `scrollTo(sectionNameOrElement, { offsetElement })` — the robust panel-height-sum + rect-diff calculation from §3.3, exposed as the public deep-link API.
-- `refresh()` — thin wrapper around `ScrollTrigger.refresh()` for consumers who mutate DOM (add/remove content) and need to force remeasurement — but the module itself should almost never call this internally mid-navigation, per the lesson from §3.3.
+- `scrollTo(sectionNameOrElement, { offsetElement })` — the robust panel-height-sum + rect-diff calculation from §3.1, exposed as the public deep-link API.
+- `refresh()` — thin wrapper around `ScrollTrigger.refresh()` for consumers who mutate DOM (add/remove content) and need to force remeasurement — but the module itself should almost never call this internally mid-navigation, per the lesson from §3.1.
 - `destroy()` — tears down all created ScrollTriggers and listeners (for SPA/route-change scenarios).
 
 ### Internal responsibilities (mapped from today's RotYounges `src/index.js`)
@@ -111,7 +115,7 @@ const stackedScroll = new StackedScroll({
 | `panels.forEach(panel => ScrollTrigger.create(...))` | `init()` |
 | `updateScrollEndSpacer()` + load/resize listeners | `init()` (spacer setup) + internal resize handler |
 | `window.scrollToMain(name)` | `scrollTo(name)` |
-| N/A (not yet built) | §3.1 short-section buffer logic, if pursued |
+| N/A (not yet built) | §3.3 short-section buffer logic, if pursued |
 
 ---
 
@@ -161,7 +165,7 @@ const stackedScroll = new StackedScroll({
 - [ ] Freeze the public API against the working demo.
 - [ ] Write regression coverage for the solved hard bugs (§5.4) using **Playwright** (not jsdom/Jest), with real viewport sizes and real scroll interactions.
 - [ ] Add mobile viewport handling (`dvh` / `visualViewport`) and `prefers-reduced-motion` support.
-- [ ] Write README + API docs + 1–2 copy-paste starter snippets (§5.6). Lead with the §3.3 deep-link story.
+- [ ] Write README + API docs + 1–2 copy-paste starter snippets (§5.6). Lead with the §3.1 deep-link story.
 - [ ] Publish the MIT-licensed npm package.
 - [ ] Distribute: publish the deep-dive writeup on the `offsetParent`/`position: fixed` bug, share a CodePen demo, post to the GSAP forums, and syndicate to Awwwards/r/webdev communities.
 - [ ] (Optional, later) evaluate real demand before starting the standalone/vanilla edition (§6).
@@ -172,13 +176,13 @@ const stackedScroll = new StackedScroll({
 
 This section captures the hardening decisions that should guide v1. They resolve the open questions in §10 and supersede the looser options in §7.
 
-### 9.1 §3.1 (two consecutive short sections) is a v1 constraint, not a solved bug
+### 9.1 §3.3 (two consecutive short sections) is a v1 constraint, not a solved bug
 
-The original plan left §3.1 open: either build a synthetic settle buffer or document it as a known constraint. The RotYounges implementation only avoids the problem by **authoring content so it does not happen**.
+The original plan left §3.3 open: either build a synthetic settle buffer or document it as a known constraint. The RotYounges implementation only avoids the problem by **authoring content so it does not happen**.
 
-**Decision for v1:** document it as a hard constraint and design the demo to avoid it. Do not market "we solved three hard bugs" — market "we solved the two hard bugs (§3.2 and §3.3) that break every naive ScrollTrigger pinning implementation, and we document the one remaining structural constraint honestly." This preserves credibility with the senior-dev audience that is your actual buyer/reader.
+**Decision for v1:** document it as a hard constraint and design the demo to avoid it. Do not market "we solved three hard bugs" — market "we solved the two hard bugs (§3.1 and §3.2) that break every naive ScrollTrigger pinning implementation, and we document the one remaining structural constraint honestly." This preserves credibility with the senior-dev audience that is your actual buyer/reader.
 
-If the package ever needs to handle arbitrary content, the synthetic buffer (§3.1b) becomes the headline feature of a v2 / Pro tier, not a v1 must-have.
+If the package ever needs to handle arbitrary content, the synthetic buffer (§3.3b) becomes the headline feature of a v2 / Pro tier, not a v1 must-have.
 
 ### 9.2 Automated tests must use Playwright, not jsdom/Jest
 
@@ -203,7 +207,7 @@ The `offsetHeight`-sum + same-tick `getBoundingClientRect()` diff gives the corr
 
 ### 9.5 Packaging and monetization: reputation-first, free MIT core
 
-The original plan's three options are internally contradictory. A senior-dev audience (the only people who feel §3.3's pain) will copy free MIT code rather than pay $15–35 for examples. CodeCanyon's audience expects complete visual templates, not a headless library. And publishing the MIT core gives away the exact fixes that are the IP.
+The original plan's three options are internally contradictory. A senior-dev audience (the only people who feel §3.1's pain) will copy free MIT code rather than pay $15–35 for examples. CodeCanyon's audience expects complete visual templates, not a headless library. And publishing the MIT core gives away the exact fixes that are the IP.
 
 **Decision:**
 - License: **MIT** (max adoption, max portfolio value).
@@ -214,7 +218,7 @@ The original plan's three options are internally contradictory. A senior-dev aud
 
 ### 9.6 Distribution, accessibility, and performance are part of the pitch
 
-A free library only works if people find it. The marketing asset is the **story of the §3.3 bug** — most developers have never heard that `offsetTop`/`offsetParent` become unreliable under `position: fixed`. Write that as a blog post / CodePen demo / GSAP forum thread; the library rides along.
+A free library only works if people find it. The marketing asset is the **story of the §3.1 bug** — most developers have never heard that `offsetTop`/`offsetParent` become unreliable under `position: fixed`. Write that as a blog post / CodePen demo / GSAP forum thread; the library rides along.
 
 Required v1 additions the original plan skipped:
 - `prefers-reduced-motion` handling.

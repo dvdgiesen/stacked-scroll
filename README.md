@@ -156,10 +156,10 @@ scroller.destroy();
 
 GSAP ScrollTrigger provides the low-level `pin` primitive, but packaging the specific "read the whole section, then hard-cut to the next" behavior involves several non-obvious edge cases:
 
-1. **Short last panel** — when the last section is shorter than the viewport, the browser physically cannot scroll it flush to the top. `stacked-scroll` adds an invisible spacer sized to exactly the missing height.
-2. **Deep links under pinned sections** — `offsetTop`/`offsetParent` become unreliable when GSAP sets `position: fixed` on the active panel. `scrollTo()` avoids them entirely by summing natural panel heights and using a same-tick `getBoundingClientRect()` difference.
-3. **Adjacent short panels** — two consecutive sections both shorter than the viewport do not get a clean handoff. This is a documented v1 constraint; the demo avoids it by design.
-4. **Previous panel never releases on the final transition** — when the last section is shorter than the viewport, the previous panel's pin `end` can land on the document's maximum scroll position, so GSAP can never scroll past it and the panel stays `position: fixed`. StackedScroll clamps every non-final pin end to just below `maxScroll` so the handoff always completes.
+1. **Deep links under pinned sections** — `offsetTop`/`offsetParent` become unreliable when GSAP sets `position: fixed` on the active panel. `scrollTo()` avoids them entirely by summing natural panel heights and using a same-tick `getBoundingClientRect()` difference.
+2. **Short last panel** — when the last section is shorter than the viewport, the browser physically cannot scroll it flush to the top. `stacked-scroll` adds an invisible spacer sized to exactly the missing height.
+3. **Final transition** — when the last section is shorter than the viewport, the previous panel's pin `end` can land on the document's maximum scroll position, so GSAP can never scroll past it and the panel stays `position: fixed`. StackedScroll clamps every non-final pin end to just below `maxScroll` so the handoff always completes.
+4. **Adjacent short panels** — two consecutive sections both shorter than the viewport do not get a clean handoff. This is a documented v1 constraint; the demo avoids it by design.
 
 ## Demo
 

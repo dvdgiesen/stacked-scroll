@@ -6,7 +6,7 @@ import ScrollTrigger from 'gsap/ScrollTrigger';
  * "stacked-pages" scroll effect built on GSAP ScrollTrigger.
  *
  * Extracted from rotyounges.com, with the fragile edge cases
- * (short last panel flush-top, deep-link offset under pinned sections,
+ * (deep-link offset under pinned sections, short last panel flush-top,
  * previous panel release on the final transition) generalized into a
  * reusable module.
  */
