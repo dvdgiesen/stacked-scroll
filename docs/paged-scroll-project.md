@@ -87,6 +87,10 @@ This never needs to know any section's current pin/fixed state at all — which 
 
 **Fix implemented in v1:** detect this configuration and insert a synthetic, invisible settle buffer between the two short sections. The buffer's height is `viewportHeight - precedingSectionHeight`, which guarantees a full viewport of scroll distance between the first pin's release and the second pin's engagement. This is handled automatically by `StackedScroll._insertBuffers()` and is recalculated on resize/orientationchange.
 
+**Remaining visual constraint:** The settle buffer fixes the scroll-physics — it makes sure the first section's pin has released before the second section starts to pin. What it cannot fix is visual: when a genuinely short panel (`offsetHeight` smaller than the viewport) is pinned at `position: fixed`, it only covers its own height. The space below it is transparent to the document behind, so the previous section's content shows through at the bottom of the viewport.
+
+In plain terms: if you make a panel shorter than the browser window, scrolling still hands it off to the next panel correctly, but while it's pinned you'll see the previous section peeking through the gap underneath it. The demo avoids this by keeping every panel at `min-height: 100vh` — the panels are never genuinely shorter, so they always fill the screen. This only matters if you deliberately size a section by its content alone instead of forcing it to fill the viewport.
+
 ---
 
 ## 4. Proposed Architecture (GSAP-Based Edition — Build This First)
@@ -176,13 +180,13 @@ const stackedScroll = new StackedScroll({
 
 This section captures the hardening decisions that should guide v1. They resolve the open questions in §10 and supersede the looser options in §7.
 
-### 9.1 §3.3 (two consecutive short sections) is now solved with a synthetic settle buffer
+### 9.1 §3.3 (two consecutive short sections) is solved for scroll handoff; visual gap remains a constraint
 
 The original plan left §3.3 open: either build a synthetic settle buffer or document it as a known constraint. The RotYounges implementation initially avoided the problem by **authoring content so it does not happen**.
 
-**Decision for v1:** implement the synthetic settle buffer (§3.3b) and remove it as a constraint. `StackedScroll` now inserts an invisible settle buffer between any pair of consecutive short sections, giving the previous pin enough scroll distance to release before the next pin engages. This is fully covered by a Playwright regression test.
+**Decision for v1:** implement the synthetic settle buffer (§3.3b) and remove the scroll-handoff constraint. `StackedScroll` now inserts an invisible settle buffer between any pair of consecutive short sections, giving the previous pin enough scroll distance to release before the next pin engages. This is fully covered by a Playwright regression test. A visual constraint remains — see §3.3 for details.
 
-**Marketing implication:** the library now genuinely solves the three hard edge cases (§3.1, §3.2, and §3.3). This is a strong, honest differentiator.
+**Marketing implication:** the library now genuinely solves the scroll-physics for all three hard edge cases (§3.1, §3.2, and §3.3). This is a strong, honest differentiator.
 
 ### 9.2 Automated tests must use Playwright, not jsdom/Jest
 

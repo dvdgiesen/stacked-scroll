@@ -159,7 +159,7 @@ GSAP ScrollTrigger provides the low-level `pin` primitive, but packaging the spe
 1. **Deep links under pinned sections** — `offsetTop`/`offsetParent` become unreliable when GSAP sets `position: fixed` on the active panel. `scrollTo()` avoids them entirely by summing natural panel heights and using a same-tick `getBoundingClientRect()` difference.
 2. **Short last panel** — when the last section is shorter than the viewport, the browser physically cannot scroll it flush to the top. `stacked-scroll` adds an invisible spacer sized to exactly the missing height.
 3. **Final transition** — when the last section is shorter than the viewport, the previous panel's pin `end` can land on the document's maximum scroll position, so GSAP can never scroll past it and the panel stays `position: fixed`. StackedScroll clamps every non-final pin end to just below `maxScroll` so the handoff always completes.
-4. **Adjacent short panels** — two consecutive sections both shorter than the viewport do not provide enough natural scroll distance for the previous pin to release before the next one engages. `stacked-scroll` injects a synthetic settle buffer between them so the handoff stays clean.
+4. **Adjacent short panels** — two consecutive sections both shorter than the viewport do not provide enough natural scroll distance for the previous pin to release before the next one engages. `stacked-scroll` injects a synthetic settle buffer between them so the handoff stays clean. The settle buffer fixes the scroll behavior, but a genuinely short panel (without `min-height: 100vh`) doesn't physically fill the viewport when pinned — the previous section's content will show through the gap. Keep your panels at `min-height: 100vh` and this never comes up.
 
 ## Demo
 
