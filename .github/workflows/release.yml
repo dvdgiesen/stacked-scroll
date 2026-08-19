@@ -33,4 +33,6 @@ jobs:
       - name: Publish to npm (OIDC)
         run: npm publish --provenance
         env:
-          NODE_AUTH_TOKEN: ''
+          # Requires an npm publish token stored as the NPM_TOKEN repository secret.
+          # Create/update it at: Settings > Secrets and variables > Actions > New repository secret.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

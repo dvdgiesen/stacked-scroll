@@ -92,6 +92,38 @@ NODE_AUTH_TOKEN=<your-token> npm publish
 The current access token expires **2026-08-26**. Renew it at
 https://www.npmjs.com/settings/dvdgiesen/tokens before then.
 
+## Keeping the npm token working
+
+### Renewal steps (when the current token expires or is revoked)
+
+1. Go to https://www.npmjs.com/settings/dvdgiesen/tokens.
+2. **Generate New Token** (Access Token → `classic`).
+3. Choose **Publish** scope.
+4. After it generates, **copy the token immediately** — npm shows it only once.
+5. In the tokens table, confirm the **"Bypass 2FA"** column shows as active for
+   the new token. If it is blank, npm is not persisting the bypass flag on your
+   account; use a fresh token or switch to the CI publish path below.
+6. Use it inline for a manual publish:
+   ```bash
+   NODE_AUTH_TOKEN=<new-token> npm publish
+   ```
+7. Update the expiry date in this file so it does not go stale.
+
+### Prefer CI publish over manual
+
+Manual tokens are short-lived and easy to lose. The recommended long-term flow
+is **Option B below** (push a `v*` tag and let GitHub Actions publish). If you
+must publish manually, treat the local token as a temporary fallback.
+
+### Security reminders
+
+- **Never commit the npm token.** The only place it should appear in CI is as a
+  GitHub secret.
+- If a token is ever pasted into a chat, terminal history, or shared screen,
+  revoke it immediately and generate a new one.
+- The npm token only needs **publish** scope. A publish-only token limits damage
+  if it leaks.
+
 ### Option B — CI publish (release.yml)
 
 `.github/workflows/release.yml` is already configured to publish on every `v*`
