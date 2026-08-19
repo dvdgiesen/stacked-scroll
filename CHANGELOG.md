@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-08-19
+
+### Changed
+
+- Unified intro copy across README, package description, type definitions,
+  and demo to describe the effect as sections that become a stack of pages
+  with pinned headers.
+
 ## [1.0.0] - 2026-08-18
 
 First stable release, extracted and hardened from the production scroll
