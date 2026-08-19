@@ -16,11 +16,13 @@ release token.
 - [x] `LICENSE` copyright line filled
 - [x] GitHub Actions CI (`test.yml`)
 - [x] `RELEASING.md` created
-- [ ] **Open:** wire the npm token into `.github/workflows/release.yml`
-  - Currently `NODE_AUTH_TOKEN: ''` is empty.
-  - To enable automatic publish on `v*` tags, add the npm token as a GitHub
-    repository secret (e.g. `NPM_TOKEN`) and change the workflow to use
-    `${{ secrets.NPM_TOKEN }}`.
+- [x] Wire the npm token into `.github/workflows/release.yml` (now reads
+      `${{ secrets.NPM_TOKEN }}`)
+- [ ] **Open:** add the `NPM_TOKEN` secret in GitHub so `release.yml` can
+      actually authenticate. Add it at
+      **Settings > Secrets and variables > Actions > New repository secret**.
+      Until this is done, continue using manual publish (`NODE_AUTH_TOKEN=<token>
+      npm publish`).
 
 ## Phase B — Promotion / discoverability
 
