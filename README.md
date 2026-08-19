@@ -1,6 +1,6 @@
 # stacked-scroll
 
-A small, hardened library for the "stacked-pages" scroll effect: full-viewport sections that pin while you read their content, then hand off cleanly to the next section as it slides up from below.
+A small, hardened library that turns your sections into a stack of pages: each header stays pinned while you read, then hands off cleanly to the next page as it slides up from below.
 
 Built on top of [GSAP ScrollTrigger](https://greensock.com/scrolltrigger/).
 

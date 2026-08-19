@@ -1,7 +1,7 @@
 {
   "name": "stacked-scroll",
   "version": "1.0.0",
-  "description": "A small, hardened library for the stacked-pages scroll effect using GSAP ScrollTrigger.",
+  "description": "A small, hardened library that turns your sections into a stack of pages: each header stays pinned while you read, then hands off cleanly to the next page as it slides up from below.",
   "type": "module",
   "main": "./dist/stacked-scroll.umd.cjs",
   "module": "./dist/stacked-scroll.js",
