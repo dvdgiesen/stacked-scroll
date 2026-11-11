@@ -268,4 +268,37 @@ test.describe('Adjacent short panels regression', () => {
     // A should have released; it must not still be position:fixed.
     expect(result.aPosition).not.toBe('fixed');
   });
+
+  test('fullscreen guard prevents ScrollTrigger revert/refresh from detaching pinned DOM nodes', async ({ page }) => {
+    await page.goto('/demo/');
+    await page.waitForLoadState('networkidle');
+    await waitForScroller(page);
+
+    // Engage the fullscreen guard and track if any pinned panel is removed from DOM
+    const detachedCount = await page.evaluate(() => {
+      let detachments = 0;
+      const observer = new MutationObserver((records) => {
+        for (const r of records) {
+          r.removedNodes.forEach((n) => {
+            if (n.nodeType === 1 && n.classList && n.classList.contains('panel')) {
+              detachments++;
+            }
+          });
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      window.scroller.setFullscreenGuard(true);
+      window.scroller.refresh();
+      window.scroller.triggers.forEach((t) => {
+        t.revert();
+        t.refresh();
+      });
+      window.scroller.setFullscreenGuard(false);
+      observer.disconnect();
+      return detachments;
+    });
+
+    expect(detachedCount).toBe(0);
+  });
 });

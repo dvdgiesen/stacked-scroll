@@ -6,7 +6,14 @@ Built on top of [GSAP ScrollTrigger](https://greensock.com/scrolltrigger/).
 
 ## Status
 
-v1.0.0 — stable and tested. Used in production on [rotyounges.com](https://rotyounges.com).
+v1.1.0 — stable and tested. Used in production on [rotyounges.com](https://rotyounges.com).
+
+## How the effect works (Two-Phase Choreography)
+
+`stacked-scroll` combines native CSS sticky positioning with GSAP `ScrollTrigger` pinning (`pin: true, pinSpacing: false`) in a two-phase handoff:
+
+1. **Phase 1 — Reading a section (`position: sticky`):** While you scroll through a tall section, its `.header` stays stuck to the top of the viewport via CSS `position: sticky; top: 0` while its `.main` content scrolls naturally underneath.
+2. **Phase 2 — Turning the page (`pin: true, pinSpacing: false`):** The instant you reach the bottom of the section (`start: "bottom bottom"`, or `"top top"` if the section is shorter than the viewport), GSAP freezes the entire section in place (`position: fixed`). Because `pinSpacing` is `false`, no blank scroll space is reserved — the next section immediately slides up from the bottom of the screen like a physical sheet of paper, covering the frozen section and bringing its own sticky header into place.
 
 ## Install
 
@@ -53,9 +60,35 @@ The library only handles the JavaScript side of pinning. Your CSS must cooperate
 
 - Do **not** add global `position: relative` or `z-index` to your section elements — this breaks GSAP's pinning behavior.
 - Headers should use `position: sticky; top: 0` if you want them to stay visible while the section content scrolls.
-- Use `min-height: 100vh` (or `100dvh`) on sections so the pin-start logic can distinguish tall vs short panels.
+- Give sections an opaque `background` and `min-height: 100vh` (or `100dvh`) so each incoming page completely covers the pinned section behind it.
+- If you need to clip horizontal overflow inside `.header` or `.main`, use `overflow-x: clip` rather than `overflow: hidden` on `body` (which breaks `position: sticky`).
 
-See `demo/index.html` for a working example.
+### Optional: Newspaper page-turn shadow recipe
+
+To get the physical "overlapping sheet of paper" look from [rotyounges.com](https://rotyounges.com) and `demo/index.html`, add a subtle upward-facing gradient band above each `.header`:
+
+```css
+.header {
+  position: sticky;
+  top: 0;
+  background: #f7f5f0;
+  z-index: 10;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 0;
+  right: 0;
+  height: 15px;
+  border-radius: 15px 15px 0 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.18));
+  pointer-events: none;
+}
+```
+
+See `demo/index.html` for a complete working example.
 
 ### Hiding headers on short viewports
 
@@ -107,7 +140,11 @@ new StackedScroll({
   hideHeadersBelow: null,
 
   // Class added to <html> when the viewport is shorter than hideHeadersBelow.
-  compactClassName: 'stacked-scroll-compact'
+  compactClassName: 'stacked-scroll-compact',
+
+  // Prevent GSAP ScrollTrigger from re-parenting pinned DOM nodes while
+  // fullscreen video/iframes are active (preserves fullscreen on resize/rotate).
+  protectFullscreen: true
 });
 ```
 
@@ -115,7 +152,7 @@ new StackedScroll({
 
 ### `init()`
 
-Set up ScrollTriggers, the scroll-end spacer, and event listeners. Returns the instance.
+Set up ScrollTriggers, the scroll-end spacer, settle buffers, and event listeners. Returns the instance.
 
 ```js
 scroller.init();
@@ -123,7 +160,7 @@ scroller.init();
 
 ### `scrollTo(target, options)`
 
-Scroll to a section or to a specific element within a section.
+Scroll to a section or to a specific element within a section. Use this instead of native `<a href="#section">` anchors, which break whenever an earlier section is pinned (`position: fixed`).
 
 ```js
 // Scroll to a section by id
@@ -138,28 +175,38 @@ scroller.scrollTo('work', { behavior: 'auto' });
 
 ### `refresh()`
 
-Recalculate spacer sizing and refresh ScrollTrigger measurements. Call this after your content changes height.
+Recalculate settle buffers, compact mode, spacer sizing, and refresh ScrollTrigger measurements. Call this after your content dynamically changes height (e.g., expanding an accordion or collapsible navigation menu inside a header/section). No-ops automatically while fullscreen protection is active.
 
 ```js
 scroller.refresh();
 ```
 
+### `setFullscreenGuard(active)`
+
+Native fullscreen (`requestFullscreen()`) is detected and protected automatically. If you also implement a CSS pseudo-fullscreen fallback for browsers like iOS Safari (e.g., toggling a `position: fixed; inset: 0` class on a video container), call `setFullscreenGuard(true)` when entering and `setFullscreenGuard(false)` when exiting so `StackedScroll` freezes trigger re-parenting during fallback fullscreen as well.
+
+```js
+scroller.setFullscreenGuard(true);  // entering CSS pseudo-fullscreen
+scroller.setFullscreenGuard(false); // exiting CSS pseudo-fullscreen
+```
+
 ### `destroy()`
 
-Kill all ScrollTriggers, remove listeners, and remove the auto-created spacer.
+Kill all ScrollTriggers, remove listeners, and remove the auto-created spacer and settle buffers.
 
 ```js
 scroller.destroy();
 ```
 
-## Why this exists
+## Why this exists (What GSAP alone does not do)
 
-GSAP ScrollTrigger provides the low-level `pin` primitive, but packaging the specific "read the whole section, then hard-cut to the next" behavior involves several non-obvious edge cases:
+GSAP `ScrollTrigger` provides the low-level `pin: true, pinSpacing: false` primitive, but a naive 6-line `ScrollTrigger.create()` loop breaks in production across five non-obvious browser/DOM edge cases:
 
-1. **Deep links under pinned sections** — `offsetTop`/`offsetParent` become unreliable when GSAP sets `position: fixed` on the active panel. `scrollTo()` avoids them entirely by summing natural panel heights and using a same-tick `getBoundingClientRect()` difference.
-2. **Short last panel** — when the last section is shorter than the viewport, the browser physically cannot scroll it flush to the top. `stacked-scroll` adds an invisible spacer sized to exactly the missing height.
-3. **Final transition** — when the last section is shorter than the viewport, the previous panel's pin `end` can land on the document's maximum scroll position, so GSAP can never scroll past it and the panel stays `position: fixed`. StackedScroll clamps every non-final pin end to just below `maxScroll` so the handoff always completes.
-4. **Adjacent short panels** — two consecutive sections both shorter than the viewport do not provide enough natural scroll distance for the previous pin to release before the next one engages. `stacked-scroll` injects a synthetic settle buffer between them so the handoff stays clean. The settle buffer fixes the scroll behavior, but a genuinely short panel (without `min-height: 100vh`) doesn't physically fill the viewport when pinned — the previous section's content will show through the gap. Keep your panels at `min-height: 100vh` and this never comes up.
+1. **Deep links and anchor jumps break under `position: fixed` (`scrollTo()`)** — When a section is pinned with `pinSpacing: false`, GSAP sets `position: fixed` on it while subsequent sections scroll over it. Per the CSSOM spec, `offsetTop` and `offsetParent` become unreliable the instant any ancestor is `position: fixed` (`offsetParent` returns `null` early, truncating offset walks and jumping near the top of the page). Even `getBoundingClientRect().top + window.scrollY` on a pinned section returns its *pinned* viewport coordinate rather than its natural scroll position. `scrollTo()` avoids both traps by summing natural (unpinned) `offsetHeight`s of preceding sections and adding a same-tick `getBoundingClientRect()` delta within the target section.
+2. **Short last panel cannot scroll flush to the top** — Because `pinSpacing: false` reserves no extra scroll space, when the final section is shorter than the viewport (`offsetHeight < viewportHeight`), `maxScroll` physically stops short of bringing that section's top edge to the top of the screen (and browsers silently clamp programmatic scrolls there, confusing ScrollTrigger's active pin state). `stacked-scroll` manages an invisible end-spacer sized to the exact shortfall (`viewportHeight - lastSection.offsetHeight`) outside your sections so the layout inside your final section needs no artificial bottom padding.
+3. **Previous panel stays stuck on the final transition** — GSAP only unpins a section once scroll passes its `end` position. When the final section is shorter than the viewport, the second-to-last section's natural handoff point can land right on `maxScroll`, so the browser can never scroll past it and the previous header stays `position: fixed` forever on top of the final section. `stacked-scroll` clamps every non-final pin `end` to `Math.min(nextTop, maxScroll - 1)` so the handoff always completes cleanly.
+4. **Adjacent short panels overlap pin windows** — Two consecutive sections both shorter than the viewport (`start: "top top"`) do not provide enough natural scroll distance for the first pin to release before the second engages. `stacked-scroll` injects and reuses a synthetic settle buffer between them so they hand off cleanly. *(Note: keep `min-height: 100vh` on your sections so a pinned section visually covers the viewport behind it.)*
+5. **Fullscreen video & `<iframe>` survival on resize and phone rotation** — `ScrollTrigger.refresh()` (and GSAP's internal `matchMedia("(orientation: portrait)")` listener when rotating a phone) temporarily unwraps and re-parents every pinned DOM node. In browsers, detaching a DOM node **immediately exits fullscreen** and **reloads any child `<iframe>` (such as a YouTube or Vimeo embed)**, restarting the video. `stacked-scroll` wraps each trigger's `revert()` and `refresh()` to freeze DOM re-parenting while fullscreen is active, then runs a single catch-up refresh after fullscreen exits if the viewport dimensions changed.
 
 ## Demo
 

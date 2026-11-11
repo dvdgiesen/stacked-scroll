@@ -60,6 +60,14 @@ export interface StackedScrollOptions {
    * @default 'stacked-scroll-compact'
    */
   compactClassName?: string;
+
+  /**
+   * Prevent GSAP ScrollTrigger `revert()`/`refresh()` from re-parenting pinned
+   * sections while native fullscreen or manual `setFullscreenGuard(true)` is
+   * active, preserving fullscreen video/iframes across resizes and rotations.
+   * @default true
+   */
+  protectFullscreen?: boolean;
 }
 
 export interface ScrollToOptions {
@@ -94,10 +102,18 @@ export declare class StackedScroll {
   scrollTo(target: string | HTMLElement, options?: ScrollToOptions): void;
 
   /**
-   * Re-measure all cached geometry (compact state, spacer, triggers) after
-   * dynamic content or layout changes.
+   * Re-measure all cached geometry (settle buffers, compact state, spacer,
+   * triggers) after dynamic content or layout changes. No-ops while fullscreen
+   * protection is active.
    */
   refresh(): void;
+
+  /**
+   * Manually engage or release the fullscreen guard (useful for CSS
+   * pseudo-fullscreen fallbacks on browsers like iOS Safari where
+   * `document.fullscreenElement` is not set).
+   */
+  setFullscreenGuard(active: boolean): void;
 
   /**
    * Tear down all ScrollTriggers, listeners, the auto-created spacer, and

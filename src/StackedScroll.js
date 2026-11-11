@@ -23,6 +23,9 @@ export class StackedScroll {
    *        Viewport height (px) below which section headers are hidden/collapsed.
    * @param {string} [options.compactClassName='stacked-scroll-compact']
    *        Class added to <html> when the viewport is below hideHeadersBelow.
+   * @param {boolean} [options.protectFullscreen=true]
+   *        Prevent ScrollTrigger revert/refresh from detaching pinned DOM nodes
+   *        while native fullscreen (or manual setFullscreenGuard) is active.
    */
   constructor(options = {}) {
     this.config = {
@@ -33,7 +36,8 @@ export class StackedScroll {
       resizeDebounceMs: options.resizeDebounceMs ?? 200,
       scrollBehavior: options.scrollBehavior ?? 'smooth',
       hideHeadersBelow: options.hideHeadersBelow ?? null,
-      compactClassName: options.compactClassName ?? 'stacked-scroll-compact'
+      compactClassName: options.compactClassName ?? 'stacked-scroll-compact',
+      protectFullscreen: options.protectFullscreen ?? true
     };
 
     this.sections = [];
@@ -42,10 +46,22 @@ export class StackedScroll {
     this.spacer = null;
     this.resizeTimer = null;
 
+    this._fullscreenGuard = {
+      manualActive: false,
+      wasActive: false,
+      restoreW: 0,
+      restoreH: 0,
+      pendingRestore: false,
+      restoreTimer: null,
+      catchupTimer: null
+    };
+    this._lastViewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+
     this._onLoad = this._handleLoad.bind(this);
     this._onResize = this._handleResize.bind(this);
     this._onOrientationChange = this._handleOrientationChange.bind(this);
     this._onVisualViewportResize = this._handleVisualViewportResize.bind(this);
+    this._onFullscreenChange = this._handleFullscreenChange.bind(this);
 
     gsap.registerPlugin(ScrollTrigger);
   }
@@ -64,13 +80,16 @@ export class StackedScroll {
 
     this._ensureSpacer();
 
-    // Apply compact-state class before measuring so pin ranges are calculated
-    // with the correct (possibly header-less) section heights.
+    // Apply compact-state class, settle buffers, and spacer sizing BEFORE
+    // creating triggers so initial pin `start`/`end` calculations see the
+    // true section heights and document scrollHeight.
     this._updateCompactState();
-
-    this._createTriggers();
+    this._insertBuffers();
     this._updateSpacer();
+    this._createTriggers();
     this._attachListeners();
+
+    this._lastViewportWidth = window.innerWidth;
 
     return this;
   }
@@ -114,12 +133,31 @@ export class StackedScroll {
   }
 
   /**
-   * Refresh all cached ScrollTrigger measurements and spacer sizing.
+   * Refresh all cached ScrollTrigger measurements, settle buffers, and spacer sizing.
+   * No-ops while fullscreen protection is active so pinned DOM nodes (and child
+   * iframes/videos) are never detached during fullscreen playback.
    */
   refresh() {
+    if (this._isFullscreenProtected()) return;
+    this._insertBuffers();
     this._updateCompactState();
     this._updateSpacer();
     ScrollTrigger.refresh();
+  }
+
+  /**
+   * Manually engage or release the fullscreen guard (useful for CSS pseudo-fullscreen
+   * fallbacks on browsers like iOS Safari where `document.fullscreenElement` is not set).
+   * @param {boolean} active
+   */
+  setFullscreenGuard(active) {
+    const next = Boolean(active);
+    if (next && !this._isFullscreenProtected()) {
+      this._fullscreenGuard.restoreW = window.innerWidth;
+      this._fullscreenGuard.restoreH = window.innerHeight;
+    }
+    this._fullscreenGuard.manualActive = next;
+    this._syncFullscreenGuardState();
   }
 
   /**
@@ -129,12 +167,18 @@ export class StackedScroll {
     window.removeEventListener('load', this._onLoad);
     window.removeEventListener('resize', this._onResize);
     window.removeEventListener('orientationchange', this._onOrientationChange);
+    document.removeEventListener('fullscreenchange', this._onFullscreenChange);
+    document.removeEventListener('webkitfullscreenchange', this._onFullscreenChange);
 
     if (window.visualViewport) {
       window.visualViewport.removeEventListener('resize', this._onVisualViewportResize);
     }
 
     clearTimeout(this.resizeTimer);
+    clearTimeout(this._fullscreenGuard.restoreTimer);
+    clearTimeout(this._fullscreenGuard.catchupTimer);
+    this._fullscreenGuard.manualActive = false;
+    this._fullscreenGuard.wasActive = false;
 
     this.triggers.forEach((trigger) => trigger.kill());
     this.triggers = [];
@@ -183,14 +227,13 @@ export class StackedScroll {
   }
 
   /**
-   * Insert invisible settle buffers between any pair of consecutive short
-   * sections (shorter than the viewport). Short panels back-to-back don't
+   * Insert or update invisible settle buffers between any pair of consecutive
+   * short sections (shorter than the viewport). Short panels back-to-back don't
    * provide enough natural scroll distance for the previous pin to release
-   * before the next one engages, so we synthesise a full viewport of room.
+   * before the next one engages, so we synthesise the missing scroll room.
+   * Existing buffer DOM nodes are reused across resizes to avoid churn.
    */
   _insertBuffers() {
-    this._removeBuffers();
-
     const viewportHeight = this._getViewportHeight();
 
     for (let i = 0; i < this.sections.length - 1; i++) {
@@ -202,19 +245,27 @@ export class StackedScroll {
       const nextShort = nextSection.offsetHeight <= viewportHeight;
 
       if (sectionShort && nextShort) {
-        const buffer = document.createElement('div');
-        buffer.className = 'stacked-scroll-buffer';
-        buffer.setAttribute('aria-hidden', 'true');
-        buffer.style.pointerEvents = 'none';
-        buffer.style.visibility = 'hidden';
+        let buffer = this.buffers.get(i);
+        if (!buffer) {
+          buffer = document.createElement('div');
+          buffer.className = 'stacked-scroll-buffer';
+          buffer.setAttribute('aria-hidden', 'true');
+          buffer.style.pointerEvents = 'none';
+          buffer.style.visibility = 'hidden';
+          this.buffers.set(i, buffer);
+        }
         // Insert the buffer AFTER the current section's outermost wrapper. At
         // init the section is not yet pinned, so this is the section itself.
         // Once ScrollTrigger wraps it in a pin-spacer, we insert after that
         // spacer so the buffer still contributes to document flow.
         const wrapper = section.closest('.pin-spacer') || section;
-        wrapper.after(buffer);
-        buffer.style.height = `${viewportHeight - section.offsetHeight}px`;
-        this.buffers.set(i, buffer);
+        if (buffer.previousElementSibling !== wrapper) {
+          wrapper.after(buffer);
+        }
+        buffer.style.height = `${Math.max(0, viewportHeight - section.offsetHeight)}px`;
+      } else if (this.buffers.has(i)) {
+        this.buffers.get(i).remove();
+        this.buffers.delete(i);
       }
     }
   }
@@ -225,8 +276,6 @@ export class StackedScroll {
   }
 
   _createTriggers() {
-    this._insertBuffers();
-
     this.sections.forEach((section) => {
       const trigger = ScrollTrigger.create({
         trigger: section,
@@ -235,6 +284,23 @@ export class StackedScroll {
         pin: true,
         pinSpacing: false
       });
+
+      // Wrap revert() and refresh() on every trigger instance so that while
+      // fullscreen protection is active, GSAP (including its internal
+      // matchMedia("(orientation: portrait)") listener on device rotation)
+      // cannot re-parent the pinned element and cancel fullscreen or reload iframes.
+      const self = this;
+      const origRevert = trigger.revert;
+      const origRefresh = trigger.refresh;
+      trigger.revert = function () {
+        if (self._isFullscreenProtected()) return;
+        return origRevert.apply(this, arguments);
+      };
+      trigger.refresh = function () {
+        if (self._isFullscreenProtected()) return;
+        return origRefresh.apply(this, arguments);
+      };
+
       this.triggers.push(trigger);
     });
   }
@@ -264,7 +330,7 @@ export class StackedScroll {
     // past it and the previous panel stays `position: fixed` forever, covering
     // the final section. Clamp the end just before max scroll so the handoff
     // can always complete.
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    const maxScroll = document.documentElement.scrollHeight - this._getViewportHeight();
     return Math.min(nextTop, Math.max(maxScroll - 1, 0));
   }
 
@@ -300,26 +366,83 @@ export class StackedScroll {
     window.addEventListener('load', this._onLoad);
     window.addEventListener('resize', this._onResize);
     window.addEventListener('orientationchange', this._onOrientationChange);
+    document.addEventListener('fullscreenchange', this._onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', this._onFullscreenChange);
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', this._onVisualViewportResize);
     }
   }
 
+  _isFullscreenProtected() {
+    if (!this.config.protectFullscreen) return false;
+    const nativeFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+    return nativeFs || this._fullscreenGuard.manualActive;
+  }
+
+  _handleFullscreenChange() {
+    this._syncFullscreenGuardState();
+  }
+
+  _syncFullscreenGuardState() {
+    const g = this._fullscreenGuard;
+    const active = this._isFullscreenProtected();
+
+    if (active && !g.wasActive) {
+      g.pendingRestore = false;
+      clearTimeout(g.restoreTimer);
+      clearTimeout(g.catchupTimer);
+      if (!g.restoreW || !g.restoreH) {
+        g.restoreW = window.innerWidth;
+        g.restoreH = window.innerHeight;
+      }
+    } else if (!active && g.wasActive) {
+      g.pendingRestore = true;
+      clearTimeout(g.restoreTimer);
+      g.restoreTimer = setTimeout(() => {
+        g.pendingRestore = false;
+      }, 1500);
+
+      // If the device rotated or the window changed size while fullscreen
+      // had frozen the triggers, run one catch-up refresh after fullscreen settles.
+      clearTimeout(g.catchupTimer);
+      g.catchupTimer = setTimeout(() => {
+        if (this._isFullscreenProtected()) return;
+        if (window.innerWidth !== g.restoreW || window.innerHeight !== g.restoreH) {
+          this.refresh();
+        }
+        g.restoreW = 0;
+        g.restoreH = 0;
+      }, 400);
+    }
+
+    g.wasActive = active;
+  }
+
+  _shouldSkipResizeRefresh() {
+    if (this._isFullscreenProtected()) return true;
+    const g = this._fullscreenGuard;
+    if (g.pendingRestore) {
+      g.pendingRestore = false;
+      return window.innerWidth === g.restoreW && window.innerHeight === g.restoreH;
+    }
+    return false;
+  }
+
   _handleLoad() {
-    this._insertBuffers();
-    this._updateCompactState();
-    this._updateSpacer();
-    ScrollTrigger.refresh();
+    this.refresh();
   }
 
   _handleResize() {
+    if (!this._isFullscreenProtected() && !this._fullscreenGuard.pendingRestore) {
+      this._fullscreenGuard.restoreW = window.innerWidth;
+      this._fullscreenGuard.restoreH = window.innerHeight;
+    }
     clearTimeout(this.resizeTimer);
     this.resizeTimer = setTimeout(() => {
-      this._insertBuffers();
-      this._updateCompactState();
-      this._updateSpacer();
-      ScrollTrigger.refresh();
+      if (this._shouldSkipResizeRefresh()) return;
+      this._lastViewportWidth = window.innerWidth;
+      this.refresh();
     }, this.config.resizeDebounceMs);
   }
 
@@ -327,16 +450,27 @@ export class StackedScroll {
     // visualViewport may not report the final size immediately after a
     // device rotation; defer the recalculation so the spacer stays correct.
     setTimeout(() => {
-      this._insertBuffers();
-      this._updateCompactState();
-      this._updateSpacer();
-      ScrollTrigger.refresh();
+      if (this._shouldSkipResizeRefresh()) return;
+      this._lastViewportWidth = window.innerWidth;
+      this.refresh();
     }, 100);
   }
 
   _handleVisualViewportResize() {
-    // URL bar show/hide on mobile changes the visual viewport without
-    // necessarily firing a window resize event. Debounce the same way.
+    if (this._shouldSkipResizeRefresh()) return;
+    // On mobile, scrolling collapses/expands the URL bar, which fires
+    // visualViewport.resize with only a small vertical height change and
+    // identical innerWidth. Update the non-destructive spacer/compact state
+    // without forcing a full DOM-detaching ScrollTrigger.refresh() unless width changed.
+    if (window.innerWidth === this._lastViewportWidth) {
+      clearTimeout(this.resizeTimer);
+      this.resizeTimer = setTimeout(() => {
+        if (this._shouldSkipResizeRefresh()) return;
+        this._updateCompactState();
+        this._updateSpacer();
+      }, this.config.resizeDebounceMs);
+      return;
+    }
     this._handleResize();
   }
 
