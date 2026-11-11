@@ -15,14 +15,13 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
-          registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies
         run: npm ci
@@ -30,9 +29,12 @@ jobs:
       - name: Build package
         run: npm run build
 
-      - name: Publish to npm (OIDC)
-        run: npm publish --provenance
+      - name: Publish to npm (OIDC Trusted Publishing or NPM_TOKEN fallback)
         env:
-          # Requires an npm publish token stored as the NPM_TOKEN repository secret.
-          # Create/update it at: Settings > Secrets and variables > Actions > New repository secret.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            npm config set "//registry.npmjs.org/:_authToken=${NPM_TOKEN}"
+          fi
+          npm publish --provenance
+

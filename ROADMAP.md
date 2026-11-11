@@ -14,15 +14,10 @@ release token.
 - [x] `CHANGELOG.md` created
 - [x] TypeScript declarations (`index.d.ts`)
 - [x] `LICENSE` copyright line filled
-- [x] GitHub Actions CI (`test.yml`)
+- [x] GitHub Actions CI (`test.yml`) and Release (`release.yml`) upgraded to Node 24 (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`)
 - [x] `RELEASING.md` created
-- [x] Wire the npm token into `.github/workflows/release.yml` (now reads
-      `${{ secrets.NPM_TOKEN }}`)
-- [ ] **Open:** add the `NPM_TOKEN` secret in GitHub so `release.yml` can
-      actually authenticate. Add it at
-      **Settings > Secrets and variables > Actions > New repository secret**.
-      Until this is done, continue using manual publish (`NODE_AUTH_TOKEN=<token>
-      npm publish`).
+- [x] Configure `.github/workflows/release.yml` for npm OIDC Trusted Publishing (with optional `secrets.NPM_TOKEN` fallback)
+- [ ] **Open:** enable **Trusted Publisher** on npm at https://www.npmjs.com/package/stacked-scroll/access (GitHub Actions → User: `dvdgiesen`, Repo: `stacked-scroll`, Workflow: `release.yml`) so tag pushes publish automatically without any tokens.
 
 ## Phase B — Promotion / discoverability
 

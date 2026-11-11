@@ -64,82 +64,41 @@ package or reading its npm page:
 - You changed only this `RELEASING.md` file or `docs/` notes.
 - You have not run the tests.
 
-## The two ways to publish to npm
+## Publishing to npm
 
-### Option A — Manual publish (fast, current default)
+### Option A — CI publish via npm Trusted Publishing (OIDC — recommended, no tokens!)
 
-Use the npm token stored in your npm account. Make sure the token has
-**"Bypass 2FA"** active or publishing will fail with a 403.
+npm has deprecated Bypass-2FA Granular Access Tokens (removing direct publish with them in January 2027) in favor of **OIDC Trusted Publishing**.
 
-```bash
-# 1. Make sure main is clean and tests pass
-npm run test:e2e
+`.github/workflows/release.yml` runs on **Node.js 24** (`npm 11.x`) with `id-token: write` and `actions/checkout@v7` / `actions/setup-node@v7`.
 
-# 2. Bump version in package.json
-# 3. Add an entry to CHANGELOG.md
+#### One-time setup on npmjs.com:
+1. Go to https://www.npmjs.com/package/stacked-scroll/access
+2. Under **Trusted Publisher** (Publishing access), select **GitHub Actions** and enter:
+   - **Organization or user:** `dvdgiesen`
+   - **Repository:** `stacked-scroll`
+   - **Workflow filename:** `release.yml`
+   - **Environment name:** *(leave blank)*
+3. Click **Save / Add**.
 
-# 4. Build and publish
-npm run build
-npm publish
-```
-
-If `npm publish` prompts for 2FA, set `NODE_AUTH_TOKEN` instead:
-
-```bash
-NODE_AUTH_TOKEN=<your-token> npm publish
-```
-
-The current access token expires **2026-08-26**. Renew it at
-https://www.npmjs.com/settings/dvdgiesen/tokens before then.
-
-## Keeping the npm token working
-
-### Renewal steps (when the current token expires or is revoked)
-
-1. Go to https://www.npmjs.com/settings/dvdgiesen/tokens.
-2. **Generate New Token** (Access Token → `classic`).
-3. Choose **Publish** scope.
-4. After it generates, **copy the token immediately** — npm shows it only once.
-5. In the tokens table, confirm the **"Bypass 2FA"** column shows as active for
-   the new token. If it is blank, npm is not persisting the bypass flag on your
-   account; use a fresh token or switch to the CI publish path below.
-6. Use it inline for a manual publish:
-   ```bash
-   NODE_AUTH_TOKEN=<new-token> npm publish
-   ```
-7. Update the expiry date in this file so it does not go stale.
-
-### Prefer CI publish over manual
-
-Manual tokens are short-lived and easy to lose. The recommended long-term flow
-is **Option B below** (push a `v*` tag and let GitHub Actions publish). If you
-must publish manually, treat the local token as a temporary fallback.
-
-### Security reminders
-
-- **Never commit the npm token.** The only place it should appear in CI is as a
-  GitHub secret.
-- If a token is ever pasted into a chat, terminal history, or shared screen,
-  revoke it immediately and generate a new one.
-- The npm token only needs **publish** scope. A publish-only token limits damage
-  if it leaks.
-
-### Option B — CI publish (release.yml)
-
-`.github/workflows/release.yml` is already configured to publish on every `v*`
-tag push. This is the cleaner long-term flow because it builds with provenance
-and does not depend on a local token.
-
-**Important:** the workflow currently has an empty `NODE_AUTH_TOKEN`. For it to
-work, you must store the npm token as a GitHub repository secret (e.g.
-`NPM_TOKEN`) and change the workflow to use `${{ secrets.NPM_TOKEN }}`.
-
-To trigger a release once that is wired:
-
+Once configured on npmjs.com, releasing a new version is just:
 ```bash
 git tag v1.x.x
 git push --tags
 ```
+GitHub Actions builds the package and publishes it to npm with provenance — no tokens or secrets required, and nothing ever expires.
+
+*(Fallback: `release.yml` also checks `${{ secrets.NPM_TOKEN }}` — if set in GitHub Actions secrets, it will use that token.)*
+
+### Option B — Manual publish from terminal (fallback)
+
+If you ever publish manually from your terminal:
+```bash
+npm run test:e2e
+npm run build
+npm publish
+```
+(Requires `npm login` in your terminal and interactive 2FA/OTP approval in the browser.)
 
 ## Release checklist (manual)
 
