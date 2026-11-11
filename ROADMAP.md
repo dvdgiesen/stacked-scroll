@@ -17,7 +17,7 @@ release token.
 - [x] GitHub Actions CI (`test.yml`) and Release (`release.yml`) upgraded to Node 24 (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`)
 - [x] `RELEASING.md` created
 - [x] Configure `.github/workflows/release.yml` for npm OIDC Trusted Publishing (with optional `secrets.NPM_TOKEN` fallback)
-- [ ] **Open:** enable **Trusted Publisher** on npm at https://www.npmjs.com/package/stacked-scroll/access (GitHub Actions → User: `dvdgiesen`, Repo: `stacked-scroll`, Workflow: `release.yml`) so tag pushes publish automatically without any tokens.
+- [x] Enable **Trusted Publisher** on npm (`dvdgiesen/stacked-scroll`, `release.yml`) — validated and verified with `v1.1.0` publish!
 
 ## Phase B — Promotion / discoverability
 
