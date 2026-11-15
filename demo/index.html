@@ -414,7 +414,10 @@
       transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
     }
 
-    .button:hover {
+    .button:hover,
+    .button:active,
+    .button:focus-visible {
+      color: var(--color-on-primary);
       transform: translateY(-1px);
       box-shadow: var(--shadow-glow);
     }
@@ -426,7 +429,9 @@
       box-shadow: none;
     }
 
-    .button--outline:hover {
+    .button--outline:hover,
+    .button--outline:active,
+    .button--outline:focus-visible {
       border-color: var(--color-primary);
       color: var(--color-primary);
       background: var(--color-primary-faint);
