@@ -444,6 +444,14 @@ export class StackedScroll {
       window.visualViewport.addEventListener('resize', this._onVisualViewportResize);
     }
 
+    if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.ready?.then === 'function') {
+      document.fonts.ready.then(() => {
+        if (this.sections.length && !this._isFullscreenProtected()) {
+          this.refresh();
+        }
+      }).catch(() => {});
+    }
+
     this._setupTouchObserver();
   }
 

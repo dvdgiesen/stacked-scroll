@@ -36,12 +36,14 @@ jobs:
 
       - name: Assemble static GitHub Pages bundle
         run: |
-          mkdir -p _site/demo _site/dist _site/vendor
-          cp demo/index.html _site/index.html
+          mkdir -p _site/demo/assets _site/assets _site/dist _site/node_modules/gsap/dist
+          cp -r demo/assets/* _site/demo/assets/
+          cp -r demo/assets/* _site/assets/
           cp demo/index.html _site/demo/index.html
+          sed 's|\.\./node_modules/|./node_modules/|g; s|\.\./dist/|./dist/|g' demo/index.html > _site/index.html
           cp -r dist/* _site/dist/
-          cp node_modules/gsap/dist/gsap.min.js _site/vendor/
-          cp node_modules/gsap/dist/ScrollTrigger.min.js _site/vendor/
+          cp node_modules/gsap/dist/gsap.min.js _site/node_modules/gsap/dist/
+          cp node_modules/gsap/dist/ScrollTrigger.min.js _site/node_modules/gsap/dist/
           touch _site/.nojekyll
 
       - name: Configure Pages

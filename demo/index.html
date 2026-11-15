@@ -3,61 +3,119 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StackedScroll — Stacked-pages scrolling</title>
+  <title>stacked-scroll — Idiomatic GSAP Stacked-Pages Showcase | watsturen.</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <style>
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400 800;
+      font-display: swap;
+      src: url('./assets/Inter-latin.woff2') format('woff2');
+    }
+
     :root {
-      --paper: #f7f5f0;
-      --ink: #1a1a1a;
-      --accent: #c43e00;
-      --rule: #1a1a1a;
-      --header-height: 4rem;
+      /* watsturen.nl "Yacht club" design tokens */
+      --palette-cream:    #f2f0ef;
+      --palette-gray:     #bbbdbc;
+      --palette-teal:     #245f73;
+      --palette-mahogany: #733e24;
+      --palette-ink:      #1b2a31;
+      --palette-copper:   #ebc9a8;
+
+      --color-bg:            var(--palette-cream);
+      --color-surface:       color-mix(in srgb, var(--palette-cream) 45%, white);
+      --color-surface-2:     color-mix(in srgb, var(--palette-cream) 82%, var(--palette-gray));
+      --color-border:        color-mix(in srgb, var(--palette-gray) 65%, transparent);
+      --color-border-hover:  var(--palette-gray);
+
+      --color-primary:       var(--palette-teal);
+      --color-primary-end:   color-mix(in srgb, var(--palette-teal) 78%, black);
+      --color-accent:        var(--palette-mahogany);
+      --color-accent-light:  var(--palette-copper);
+      --color-on-primary:    #f8f7f6;
+
+      --color-primary-faint:  color-mix(in srgb, var(--color-primary) 6%, transparent);
+      --color-primary-soft:   color-mix(in srgb, var(--color-primary) 11%, transparent);
+      --color-primary-border: color-mix(in srgb, var(--color-primary) 26%, transparent);
+
+      --gradient-primary: linear-gradient(135deg, var(--color-primary), var(--color-primary-end));
+      --gradient-text:    linear-gradient(135deg, var(--color-primary), var(--color-accent));
+
+      --color-text:        var(--palette-ink);
+      --color-text-muted:  color-mix(in srgb, var(--palette-ink) 78%, var(--palette-cream));
+      --color-text-subtle: color-mix(in srgb, var(--palette-ink) 64%, var(--palette-cream));
+
+      --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+      --header-height: 3.75rem;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --radius-full: 9999px;
+      --shadow-sm: 0 2px 8px rgba(27, 42, 49, 0.06);
+      --shadow-md: 0 8px 28px rgba(27, 42, 49, 0.10);
+      --shadow-glow: 0 0 36px color-mix(in srgb, var(--color-primary) 20%, transparent);
     }
 
     * { box-sizing: border-box; }
 
     html {
       scroll-behavior: auto;
+      overflow-x: hidden;
     }
 
     body {
       margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
-      color: var(--ink);
-      background: var(--paper);
+      font-family: var(--font-sans);
+      color: var(--color-text);
+      background: var(--color-bg);
       line-height: 1.6;
+      overflow-x: clip;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Panel / section layout — NO position: relative here; it breaks GSAP pinning. */
+    /* CRITICAL GSAP RULE: Never put position: relative or z-index on .panel */
     .panel {
       min-height: 100vh;
       min-height: 100dvh;
-      background: var(--paper);
-      border-bottom: 2px solid var(--rule);
+      background: var(--color-bg);
+      border-bottom: 1px solid var(--color-border);
     }
 
     .panel:last-of-type {
       border-bottom: none;
     }
 
-    /* The "short" sections have compact content, but each panel still keeps
-       min-height: 100vh so a pinned panel fully covers the section behind it. */
+    #cover, #highlight, #contact {
+      background:
+        radial-gradient(circle at 85% 15%, rgba(36, 95, 115, 0.09) 0%, transparent 55%),
+        radial-gradient(circle at 12% 85%, rgba(115, 62, 36, 0.06) 0%, transparent 50%),
+        var(--color-bg);
+    }
 
-    /* Section header — sticky inside its panel */
+    #longread, #gallery {
+      background:
+        radial-gradient(circle at 90% 10%, rgba(36, 95, 115, 0.07) 0%, transparent 45%),
+        #f6f5f4;
+    }
+
+    /* Translucent frosted sticky header — watsturen.nl style */
     .header {
       position: sticky;
       top: 0;
       padding: 0;
-      background: var(--paper);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
       z-index: 10;
     }
 
-    /* Newspaper page-turn shadow — a gradient band that protrudes above the
-       sticky header, with rounded top corners so the page edges don't look
-       abruptly cut off. This mirrors the rotyounges effect exactly. */
+    /* Upward-facing page-turn shadow band above sticky header */
     .header::before {
       content: '';
       position: absolute;
@@ -66,397 +124,332 @@
       right: 0;
       height: 15px;
       border-radius: 15px 15px 0 0;
-      background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.18));
+      background: linear-gradient(to bottom, rgba(27, 42, 49, 0), rgba(27, 42, 49, 0.14));
       pointer-events: none;
     }
 
     .header__bar {
       display: flex;
       align-items: center;
+      gap: 0.85rem;
       min-height: var(--header-height);
-      padding: 0 1.5rem;
-      border-bottom: 1px solid var(--rule);
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .header__brand {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--color-text);
+      letter-spacing: -0.03em;
+      margin-right: 0.35rem;
+      cursor: pointer;
+    }
+
+    .header__brand-dot {
+      color: var(--color-accent);
     }
 
     .header__title {
-      font-weight: 700;
+      font-weight: 600;
+      color: var(--color-primary);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
     .header__kicker {
       margin-left: auto;
-      opacity: 0.6;
+      font-size: 0.75rem;
+      color: var(--color-text-subtle);
     }
 
-    /* Mobile-style hamburger navigation — shown on every viewport, exactly as
-       RotYounges presents it on mobile. */
+    html.stacked-scroll-compact .header__bar {
+      min-height: 2.5rem;
+    }
+    html.stacked-scroll-compact .header__kicker {
+      display: none;
+    }
+
+    /* Hamburger navigation toggle */
     .mobile-nav-toggle {
-      background: none;
-      border: none;
-      padding: 0 0.25rem;
-      margin-left: 1rem;
-      font-size: 1.4rem;
+      background: var(--color-primary-faint);
+      border: 1px solid var(--color-primary-border);
+      border-radius: var(--radius-md);
+      width: 2.1rem;
+      height: 2.1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 0.5rem;
+      font-size: 1.15rem;
       line-height: 1;
-      color: var(--ink);
+      color: var(--color-text);
       cursor: pointer;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: var(--font-sans);
+      transition: background 150ms ease, border-color 150ms ease;
     }
 
     .mobile-nav-toggle:hover {
-      opacity: 0.6;
+      background: var(--color-primary-soft);
+      border-color: var(--color-primary);
     }
 
     .mobile-nav-toggle[aria-expanded="true"] {
       color: transparent;
       position: relative;
-      font-size: 1.8rem;
     }
 
     .mobile-nav-toggle[aria-expanded="true"]::before {
       content: '\00D7';
-      color: var(--ink);
+      color: var(--color-text);
       position: absolute;
-      right: 0.25rem;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 1.6rem;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
     }
 
     .mobile-nav {
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.25s ease;
-      background-color: var(--paper);
+      transition: max-height 0.16s ease;
+      background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
     .mobile-nav.is-open {
-      max-height: 20rem;
+      max-height: 16rem;
+      border-bottom: 1px solid var(--color-border);
     }
 
     .mobile-nav-item {
       display: block;
-      padding: 0.55rem 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      text-align: center;
-      border-bottom: 1px solid var(--rule);
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0.48rem clamp(1.25rem, 4vw, 2.5rem);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--color-text);
+      border-bottom: 1px solid var(--color-border);
       cursor: pointer;
+    }
+
+    .mobile-nav-item:last-child {
+      border-bottom: none;
     }
 
     .mobile-nav-item:hover {
-      opacity: 0.6;
+      color: var(--color-primary);
+      background: var(--color-primary-faint);
     }
 
-    /* Main content */
     .main {
-      padding: 2rem 1.5rem 4rem;
-      max-width: 75ch;
+      max-width: 980px;
       margin: 0 auto;
+      padding: 1.75rem clamp(1.25rem, 4vw, 2.5rem) 2.5rem;
     }
 
-    .main h2 {
-      font-size: clamp(2rem, 6vw, 4rem);
-      line-height: 1.05;
-      margin: 0 0 1rem;
-    }
-
-    .main h3 {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 0.85rem;
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin: 2.5rem 0 0.5rem;
+      color: var(--color-primary);
+      margin-bottom: 0.5rem;
     }
 
-    .main p {
-      font-size: clamp(1.05rem, 2vw, 1.25rem);
-      margin: 0 0 1.25rem;
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-full);
+    }
+
+    .text-gradient {
+      background: var(--gradient-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h1 {
+      font-size: clamp(1.9rem, 3.8vw, 2.75rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin: 0 0 0.65rem;
+      letter-spacing: -0.03em;
+      color: var(--color-text);
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.25rem);
+      font-weight: 700;
+      line-height: 1.18;
+      margin: 0 0 0.75rem;
+      letter-spacing: -0.025em;
+      color: var(--color-text);
+    }
+
+    h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 1.85rem 0 0.45rem;
+      padding-top: 1.15rem;
+      border-top: 1px solid var(--color-border);
+      color: var(--color-accent);
+    }
+
+    p {
+      margin: 0 0 0.85rem;
+      font-size: 0.96rem;
+      color: var(--color-text-muted);
+      max-width: 68ch;
     }
 
     .lead {
-      font-size: clamp(1.15rem, 2.5vw, 1.5rem);
-      font-style: italic;
+      font-size: 1.06rem;
+      color: var(--color-text);
+      font-weight: 500;
     }
 
-    .rule {
-      width: 6rem;
-      height: 3px;
-      background: var(--rule);
-      margin: 1.5rem 0;
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      background: var(--color-surface-2);
+      color: var(--color-accent);
+      padding: 0.1em 0.38em;
+      border-radius: var(--radius-sm);
     }
 
-    .button {
-      display: inline-block;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    pre {
+      font-family: var(--font-mono);
       font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 0.75rem 1.25rem;
-      border: 2px solid var(--rule);
-      background: var(--paper);
-      color: var(--ink);
-      cursor: pointer;
+      background: var(--palette-ink);
+      color: var(--palette-cream);
+      padding: 0.85rem 1.1rem;
+      border-radius: var(--radius-lg);
+      overflow-x: auto;
+      margin: 0.75rem 0;
+    }
+
+    pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+    }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.48rem 1rem;
+      background: var(--gradient-primary);
+      color: var(--color-on-primary);
       text-decoration: none;
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
     }
 
     .button:hover {
-      background: var(--rule);
-      color: var(--paper);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-glow);
     }
 
-    .button + .button {
-      margin-left: 0.5rem;
+    .button--outline {
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-color: var(--color-border-hover);
+      box-shadow: none;
     }
 
-    /* Tall content stream */
-    .content-stream {
-      display: grid;
-      gap: 1.5rem;
-      margin-top: 2rem;
+    .button--outline:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      background: var(--color-primary-faint);
+      box-shadow: none;
     }
 
-    .content-stream article {
-      padding: 1.25rem;
-      border: 1px solid rgba(26, 26, 26, 0.15);
-    }
-
-    .content-stream article h4 {
-      margin: 0 0 0.5rem;
-      font-size: 1.15rem;
-    }
-
-    .content-stream article p {
-      margin: 0;
-      font-size: 1rem;
-    }
-
-    /* Short-content panel layout — the panel itself still fills the viewport
-       (min-height: 100vh) so the previous panel never shows through below. */
-    .short .main {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-height: 40vh;
-      min-height: 40dvh;
-      max-width: 60ch;
-      text-align: center;
-    }
-
-    .short .main h2 {
-      margin-bottom: 1rem;
-    }
-
-    /* Masthead */
-    .masthead {
-      text-align: center;
-      padding: 12vh 1rem 6vh;
-    }
-
-    .masthead__title {
-      font-size: clamp(3rem, 12vw, 9rem);
-      line-height: 0.9;
-      margin: 0;
-      letter-spacing: -0.03em;
-    }
-
-    .masthead__subtitle {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      margin-top: 1rem;
-      opacity: 0.7;
-    }
-
-    /* Feature list */
     .features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.55rem;
       list-style: none;
       padding: 0;
-      margin: 2rem 0;
-      border-top: 2px solid var(--rule);
+      margin: 0.65rem 0 0.85rem;
+    }
+
+    @media (max-width: 640px) {
+      .features { grid-template-columns: 1fr; }
     }
 
     .features li {
-      padding: 1rem 0;
-      border-bottom: 1px solid rgba(26, 26, 26, 0.2);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 0.95rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 0.55rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      line-height: 1.38;
+      box-shadow: var(--shadow-sm);
     }
 
     .features li strong {
-      display: inline-block;
-      min-width: 8rem;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    /* Gallery grid */
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .gallery-grid figure {
-      margin: 0;
-      aspect-ratio: 4 / 3;
-      background: rgba(26, 26, 26, 0.06);
-      border: 1px solid rgba(26, 26, 26, 0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: rgba(26, 26, 26, 0.5);
-    }
-
-    /* Reduced motion */
-    @media (prefers-reduced-motion: reduce) {
-      html {
-        scroll-behavior: auto;
-      }
-    }
-
-    /* Compact mode preview (when html.stacked-scroll-compact is active) */
-    html.stacked-scroll-compact .header__bar {
-      min-height: 2.35rem;
-      padding: 0 1rem;
-      font-size: 0.7rem;
-    }
-
-    html.stacked-scroll-compact .header__kicker {
-      display: none;
-    }
-
-    /* Interactive Demo Control Bar (fixed bottom-right pill) */
-    .demo-toolbar {
-      position: fixed;
-      bottom: 1rem;
-      right: 1rem;
-      z-index: 9999;
-      background: var(--paper);
-      color: var(--ink);
-      border: 2px solid var(--rule);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 0.75rem;
-      max-width: calc(100vw - 2rem);
-    }
-
-    .demo-toolbar__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      padding: 0.45rem 0.75rem;
-      background: var(--ink);
-      color: var(--paper);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 700;
-      font-size: 0.7rem;
-    }
-
-    .demo-toolbar__toggle {
-      background: none;
-      border: 1px solid rgba(247, 245, 240, 0.4);
-      color: var(--paper);
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      padding: 0.15rem 0.45rem;
-      cursor: pointer;
-    }
-
-    .demo-toolbar__body {
-      padding: 0.65rem 0.75rem;
-      display: grid;
-      gap: 0.55rem;
-    }
-
-    .demo-toolbar.is-collapsed .demo-toolbar__body {
-      display: none;
-    }
-
-    .demo-toolbar__row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.35rem;
-    }
-
-    .demo-toolbar__label {
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-size: 0.68rem;
-      margin-right: 0.25rem;
-    }
-
-    .demo-chip {
-      appearance: none;
-      background: var(--paper);
-      color: var(--ink);
-      border: 1px solid var(--rule);
-      padding: 0.28rem 0.55rem;
-      font-family: inherit;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .demo-chip:hover {
-      background: rgba(26, 26, 26, 0.08);
-    }
-
-    .demo-chip.is-active {
-      background: var(--accent);
-      color: var(--paper);
-      border-color: var(--accent);
+      color: var(--color-text);
       font-weight: 700;
     }
 
-    /* Interactive Demo Lab Cards inside sections */
     .demo-lab {
-      margin: 2rem 0;
-      padding: 1.25rem 1.5rem;
-      border: 2px solid var(--rule);
-      background: rgba(26, 26, 26, 0.03);
+      margin: 1.75rem 0;
+      padding: 1.35rem;
+      border: 1px solid var(--color-primary-border);
+      border-radius: var(--radius-xl);
+      background: var(--color-surface);
+      box-shadow: var(--shadow-md);
     }
 
     .demo-lab__eyebrow {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--accent);
-      margin: 0 0 0.35rem;
+      letter-spacing: 0.09em;
+      color: var(--color-primary);
+      margin: 0 0 0.3rem;
     }
 
     .demo-lab h4 {
-      margin: 0 0 0.5rem;
-      font-size: 1.25rem;
+      margin: 0 0 0.45rem;
+      font-size: 1.15rem;
+      color: var(--color-text);
     }
 
     .demo-lab p {
-      font-size: 0.98rem;
-      margin: 0 0 0.85rem;
+      font-size: 0.92rem;
+      margin: 0 0 0.75rem;
     }
 
-    /* Collapsible drawer demo */
     .collapsible-drawer {
       display: none;
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px dashed rgba(26, 26, 26, 0.35);
+      margin-top: 0.85rem;
+      padding-top: 0.85rem;
+      border-top: 1px dashed var(--color-border-hover);
     }
 
     .collapsible-drawer.is-expanded {
@@ -466,39 +459,76 @@
     .collapsible-drawer__block {
       padding: 1rem;
       margin-bottom: 0.75rem;
-      background: var(--paper);
-      border: 1px solid rgba(26, 26, 26, 0.18);
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
     }
 
-    /* Horizontal swipe-ignore strip */
+    .callout {
+      padding: 1.65rem;
+      border: 1px solid var(--color-primary-border);
+      border-radius: var(--radius-xl);
+      background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-2) 100%);
+      box-shadow: var(--shadow-md);
+      margin: 1.25rem 0;
+    }
+
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 0.85rem;
+      margin: 1.5rem 0;
+    }
+
+    .gallery-grid figure {
+      margin: 0;
+      min-height: 135px;
+      padding: 1rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .gallery-grid figure strong {
+      color: var(--color-primary);
+      font-size: 0.88rem;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
     .swipe-ignore-strip {
       display: flex;
-      gap: 0.85rem;
+      gap: 0.75rem;
       overflow-x: auto;
-      padding: 0.85rem 0.25rem;
-      margin: 0.75rem 0;
-      border-top: 1px solid rgba(26, 26, 26, 0.2);
-      border-bottom: 1px solid rgba(26, 26, 26, 0.2);
+      padding: 0.65rem 0.2rem;
+      margin: 0.65rem 0;
       -webkit-overflow-scrolling: touch;
     }
 
     .swipe-ignore-card {
-      flex: 0 0 210px;
+      flex: 0 0 220px;
       padding: 0.85rem;
-      background: var(--paper);
-      border: 1px solid var(--rule);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border-hover);
+      border-radius: var(--radius-lg);
       font-size: 0.8rem;
+      color: var(--color-text-muted);
     }
 
-    /* Fullscreen test box */
     .fullscreen-stage {
-      margin-top: 0.85rem;
-      padding: 1.25rem;
-      background: #141414;
-      color: #f7f5f0;
-      border: 2px solid var(--rule);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      margin-top: 0.75rem;
+      padding: 1.2rem;
+      background: linear-gradient(135deg, var(--palette-ink), var(--palette-teal));
+      color: var(--palette-cream);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-primary-border);
     }
 
     .fullscreen-stage.is-pseudo-fullscreen {
@@ -508,270 +538,361 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.78);
+      box-shadow: 0 0 0 9999px rgba(27, 42, 49, 0.82);
     }
 
     .fullscreen-stage__metrics {
       display: flex;
       flex-wrap: wrap;
-      gap: 1rem;
-      margin: 0.75rem 0 1rem;
-      font-size: 0.82rem;
+      gap: 0.65rem;
+      margin: 0.65rem 0 0.85rem;
+      font-size: 0.78rem;
     }
 
     .fullscreen-stage__badge {
-      padding: 0.25rem 0.55rem;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-full);
+      background: rgba(242, 240, 239, 0.1);
+      border: 1px solid rgba(235, 201, 168, 0.35);
+      color: var(--palette-cream);
     }
 
-    .fullscreen-stage .button {
-      background: #f7f5f0;
-      color: #141414;
-      border-color: #f7f5f0;
-      margin-bottom: 0.35rem;
+    .fullscreen-stage__badge strong {
+      color: var(--palette-copper);
     }
 
-    .fullscreen-stage .button:hover {
-      background: var(--accent);
-      color: #f7f5f0;
-      border-color: var(--accent);
+    .demo-toolbar {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: var(--color-text);
+      border: 1px solid var(--color-primary-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      font-size: 0.74rem;
+      max-width: calc(100vw - 2rem);
+      overflow: hidden;
     }
 
+    .demo-toolbar__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.42rem 0.75rem;
+      background: var(--palette-ink);
+      color: var(--palette-cream);
+      font-weight: 700;
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+    }
+
+    .demo-toolbar__toggle {
+      background: rgba(242, 240, 239, 0.12);
+      border: 1px solid rgba(242, 240, 239, 0.28);
+      border-radius: var(--radius-sm);
+      color: var(--palette-cream);
+      font-size: 0.65rem;
+      padding: 0.12rem 0.4rem;
+      cursor: pointer;
+    }
+
+    .demo-toolbar__body {
+      padding: 0.6rem 0.75rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .demo-toolbar.is-collapsed .demo-toolbar__body { display: none; }
+
+    .demo-toolbar__row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .demo-toolbar__label {
+      font-weight: 700;
+      font-size: 0.68rem;
+      color: var(--color-text-muted);
+      margin-right: 0.2rem;
+    }
+
+    .demo-chip {
+      appearance: none;
+      background: var(--color-bg);
+      color: var(--color-text);
+      border: 1px solid var(--color-border-hover);
+      border-radius: var(--radius-full);
+      padding: 0.22rem 0.55rem;
+      font-family: var(--font-sans);
+      font-size: 0.68rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 150ms ease;
+    }
+
+    .demo-chip:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .demo-chip.is-active {
+      background: var(--color-primary);
+      color: var(--color-on-primary);
+      border-color: var(--color-primary);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
   </style>
 </head>
 <body>
+  <!-- 01 — Cover (100vh hero, watsturen.nl minimal style) -->
   <section class="panel" id="cover">
     <header class="header">
       <div class="header__bar">
-        <span class="header__title">The Front Page</span>
-        <span class="header__kicker">Issue No. 1</span>
-        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+        <a class="header__brand" href="#cover" onclick="event.preventDefault(); scroller.scrollTo('cover')">watsturen<span class="header__brand-dot">.</span></a>
+        <span class="header__title">01 — stacked-scroll</span>
+        <span class="header__kicker">GSAP 3.13+ · ScrollTrigger + Observer</span>
+        <button class="mobile-nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
       </div>
-      <nav class="mobile-nav" aria-label="Navigation">
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
+      <nav class="mobile-nav" aria-label="Section navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">01 — Overview</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">02 — The 6 Findings</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">03 — Short Panel Handoff</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">04 — Interactive Sandbox</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">05 — Install &amp; Open Source</span>
       </nav>
     </header>
     <main class="main">
-      <div class="masthead">
-        <h2 class="masthead__title">StackedScroll</h2>
-        <p class="masthead__subtitle">A hardened library for stacked-page scrolling with pinned headers</p>
-      </div>
-      <p class="lead">Scroll down. Each section behaves like a page in a stack of papers: read through the content while the header stays pinned, then the next page slides up to take its place.</p>
-      <div class="rule"></div>
-      <p>This demo uses <strong>StackedScroll</strong>, an idiomatic <strong>GSAP 3.13+ (<code>ScrollTrigger</code> + <code>Observer</code>)</strong> library extracted from <a href="https://rotyounges.com" target="_blank" rel="noopener">rotyounges.com</a>. It solves the edge cases that break every naive implementation:</p>
+      <span class="section-label">Open Source GSAP Module · Born on rotyounges.com</span>
+      <h1>Sections that turn like a <span class="text-gradient">stack of pages.</span></h1>
+      <p class="lead">Each section's translucent header stays pinned while you read, then hands off cleanly to the next page — vertically (<code>bottom-up</code>) or horizontally (<code>from-right</code> / <code>from-left</code>).</p>
       <ul class="features">
-        <li><strong>Two-phase GSAP pinning &amp; 3 transition modes</strong> — switch live between <code>bottom-up</code>, <code>from-right</code> (newspaper turn), and <code>from-left</code> (card swipe) with <code>ScrollTrigger.observe()</code> touch-swipe.</li>
-        <li><strong>Deep links &amp; collapsible content anchoring</strong> — <code>scrollTo()</code> avoids the <code>offsetParent</code> trap, and collapsing an accordion under a pin automatically anchors <code>window.scrollY</code>.</li>
-        <li><strong>Short last panel &amp; adjacent short buffers</strong> — an automatic end-spacer, pin-end clamping, and synthetic settle buffers keep every section handoff clean.</li>
-        <li><strong>Fullscreen &amp; rotation guard</strong> — prevents <code>ScrollTrigger.refresh()</code> and phone rotation from detaching pinned DOM nodes or reloading <code>&lt;iframe&gt;</code> embeds.</li>
+        <li><strong>Two-Phase GSAP Pinning</strong> — <code>position: sticky</code> header while reading; <code>ScrollTrigger</code> <code>pin: true, pinSpacing: false</code> on handoff.</li>
+        <li><strong>3 Transitions + Observer Swipe</strong> — switch between <code>bottom-up</code>, <code>from-right</code>, and <code>from-left</code> with <code>ScrollTrigger.observe()</code> touch-swipe.</li>
+        <li><strong>Deep-Link Safe &amp; Scroll-Anchored</strong> — <code>scrollTo()</code> bypasses the <code>offsetParent</code> trap; collapsing accordions anchors <code>window.scrollY</code>.</li>
+        <li><strong>Fullscreen Guard &amp; Short Buffers</strong> — keeps fullscreen video/iframes alive on resize/rotate and auto-manages end-spacers &amp; settle buffers.</li>
       </ul>
-      <div class="demo-toolbar__row" role="group" aria-label="Page transition mode" style="margin: 1rem 0 1.25rem;">
-        <button type="button" class="button" data-transition-btn="bottom-up" onclick="setDemoTransition('bottom-up')">Bottom-Up (Default)</button>
-        <button type="button" class="button" data-transition-btn="from-right" onclick="setDemoTransition('from-right')">From-Right (Newspaper Turn)</button>
-        <button type="button" class="button" data-transition-btn="from-left" onclick="setDemoTransition('from-left')">From-Left (Card Swipe)</button>
+      <div class="demo-toolbar__row" role="group" aria-label="Page transition mode" style="margin-top: 0.5rem;">
+        <button type="button" class="button" data-transition-btn="bottom-up" onclick="setDemoTransition('bottom-up')">Bottom-Up</button>
+        <button type="button" class="button button--outline" data-transition-btn="from-right" onclick="setDemoTransition('from-right')">From-Right (Newspaper)</button>
+        <button type="button" class="button button--outline" data-transition-btn="from-left" onclick="setDemoTransition('from-left')">From-Left (Card Swipe)</button>
+        <a href="#longread" class="button" onclick="event.preventDefault(); scroller.scrollTo('longread')">Explore the 6 findings &darr;</a>
       </div>
-      <a href="#longread" class="button" onclick="event.preventDefault(); scroller.scrollTo('longread')">Start reading</a>
     </main>
   </section>
 
+  <!-- 02 — The 6 Production Findings (tall section, scrolls before pinning) -->
   <section class="panel" id="longread">
     <header class="header">
       <div class="header__bar">
-        <span class="header__title">The Long Read</span>
-        <span class="header__kicker">Tall section</span>
-        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+        <a class="header__brand" href="#cover" onclick="event.preventDefault(); scroller.scrollTo('cover')">watsturen<span class="header__brand-dot">.</span></a>
+        <span class="header__title">02 — The 6 Findings</span>
+        <span class="header__kicker">Tall section · start: "bottom bottom"</span>
+        <button class="mobile-nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
       </div>
-      <nav class="mobile-nav" aria-label="Navigation">
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
+      <nav class="mobile-nav" aria-label="Section navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">01 — Overview</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">02 — The 6 Findings</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">03 — Short Panel Handoff</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">04 — Interactive Sandbox</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">05 — Install &amp; Open Source</span>
       </nav>
     </header>
     <main class="main">
-      <h2>The stacked-pages mechanic</h2>
-      <p class="lead">This section is taller than your viewport. Scroll through its body first. Only once you reach the bottom does the next section begin to slide over it.</p>
-      <div class="rule"></div>
-      <p>That is the core difference between this effect and a simple sticky header. With sticky positioning alone, the header releases as soon as its container scrolls out. Here, the entire panel stays visually locked until you have consumed its content, producing a hard cut to the next section.</p>
-      <h3>How the deep-link fix works</h3>
-      <div class="content-stream">
-        <article id="article-01">
-          <h4>01 — Pin start logic</h4>
-          <p>If a panel is shorter than the viewport, it pins immediately at <code>start: "top top"</code>. If it is taller, it waits until its own bottom reaches the viewport bottom with <code>start: "bottom bottom"</code>.</p>
-        </article>
-        <article id="article-02">
-          <h4>02 — pinSpacing: false</h4>
-          <p>By disabling ScrollTrigger's default reserved scroll space, the next panel can slide up and cover the pinned one the moment the handoff begins.</p>
-        </article>
-        <article id="article-03">
-          <h4>03 — The offsetParent trap</h4>
-          <p>When GSAP pins a panel, it sets <code>position: fixed</code>. That makes <code>offsetTop</code> and <code>offsetParent</code> unreliable for computing a target's document position — the classic deep-link bug. StackedScroll avoids them entirely.</p>
-        </article>
-        <article id="article-04">
-          <h4>04 — Natural height sum</h4>
-          <p><code>offsetHeight</code> is a panel's own natural size; fixed positioning changes its offset, never its size. Summing preceding panels gives the target panel's true document top.</p>
-        </article>
-        <article id="article-05">
-          <h4>05 — Same-tick rect diff</h4>
-          <p><code>getBoundingClientRect()</code> on the target and its panel share the same live viewport coordinate space. Their difference is the target's true offset within its panel.</p>
-        </article>
-        <article id="article-06">
-          <h4>06 — Header compensation</h4>
-          <p>Each <code>scrollTo()</code> call subtracts the target section's own header height, so the pinned header never obscures the destination.</p>
-        </article>
-      </div>
-      <div class="rule"></div>
-      <p class="lead">Try it: open the ☰ menu and tap <strong>Gallery</strong> — that is a deep link to a section top.</p>
-      <p>Or jump straight to a mid-section element: <a href="#article-02" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-02' })">02 — pinSpacing: false</a>, <a href="#article-03" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-03' })">03 — The offsetParent trap</a>. The same `scrollTo()` calculation lands on the element, not just the section top, as long as there is enough content below it to scroll there.</p>
+      <span class="section-label">Architecture &amp; Production Edge Cases</span>
+      <h2>Why a naive 6-line ScrollTrigger loop breaks in production</h2>
+      <p class="lead">Notice how this section's translucent <code>watsturen.</code> header stays pinned at the top while you read. Only when you reach the bottom of this section does GSAP freeze the entire section so Section 03 can slide over it.</p>
+      <p>Jump straight to a mid-section finding using <code>scrollTo(section, { offsetElement })</code>:
+        <a href="#article-02" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-02' })">Finding 02 — pinSpacing: false</a> &middot;
+        <a href="#article-03" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-03' })">Finding 03 — The offsetParent trap</a> &middot;
+        <a href="#lab-collapsible" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#lab-collapsible' })">Finding 04 — Collapsible content anchoring</a>
+      </p>
+
+      <h3 id="article-01">Finding 01 — Two-Phase Sticky + Pin Choreography (Tall vs. Short Panels)</h3>
+      <p>Plain CSS <code>position: sticky</code> can keep a header visible while its section scrolls, but it cannot hold a finished section in place while the next section slides over it. <code>StackedScroll</code> pairs CSS sticky headers with height-aware GSAP <code>ScrollTrigger</code> start rules:</p>
+      <ul>
+        <li><strong>Tall sections (<code>offsetHeight &ge; viewportHeight</code>):</strong> <code>start: "bottom bottom"</code> — let the reader scroll naturally through all content first, then pin the final view.</li>
+        <li><strong>Short sections (<code>offsetHeight &lt; viewportHeight</code>):</strong> <code>start: "top top"</code> — no internal scrolling is needed, so the section pins as soon as its top reaches the top of the viewport.</li>
+      </ul>
+
+      <h3 id="article-02">Finding 02 — Why <code>pinSpacing: false</code> Is Essential (and Its Pointer-Events Gotcha)</h3>
+      <p>By default, GSAP's <code>pin: true</code> inserts a <code>.pin-spacer</code> wrapper that reserves extra vertical scroll space equal to the pin duration. Setting <code>pinSpacing: false</code> disables that dead space so the next section immediately slides over the pinned one.</p>
+      <p><strong>Crucial finding for horizontal page turns (<code>from-right</code> / <code>from-left</code>):</strong> While an incoming panel is translated off to the side, its parent <code>.pin-spacer</code> still rises vertically from the bottom across the full viewport width. <code>StackedScroll</code> automatically sets <code>.pin-spacer { pointer-events: none }</code> and <code>.panel { pointer-events: auto }</code> so the invisible wrapper never blocks links or buttons on the underlying pinned page.</p>
+
+      <h3 id="article-03">Finding 03 — The <code>offsetParent</code> &amp; <code>getBoundingClientRect()</code> Trap Under <code>position: fixed</code></h3>
+      <p>Once a user scrolls past Section 1, GSAP pins Section 1 with <code>position: fixed; top: 0px</code>. Under the CSSOM View specification, any element with <code>position: fixed</code> has <code>offsetParent === null</code> and reports its viewport-relative offset instead of its document offset. Calling <code>element.offsetTop</code> or <code>getBoundingClientRect().top + window.scrollY</code> on a pinned section returns <code>window.scrollY</code> — landing hundreds of pixels off target.</p>
+      <p><code>StackedScroll.scrollTo()</code> computes every target's true document position by summing the natural <code>offsetHeight</code> of preceding sections (plus any synthetic settle buffers) and adding a same-tick <code>getBoundingClientRect()</code> delta between the target section and any inner <code>offsetElement</code>, minus sticky header height.</p>
 
       <div class="demo-lab" id="lab-collapsible">
-        <p class="demo-lab__eyebrow">Interactive Feature 02 — Collapsible Content Scroll Anchoring</p>
-        <h4>"Read more / Show less" inside a pinned section</h4>
-        <p>When you reach the bottom of a tall section, GSAP pins it (<code>position: fixed</code>) and locks an inline height on its <code>.pin-spacer</code>, which disables native browser CSS Scroll Anchoring. Expand the archival notes below, scroll to the bottom of the expanded notes so this section pins, and click <strong>Show less</strong> — <code>scroller.refresh()</code> reads the pre-refresh height via <code>ScrollTrigger</code>'s <code>refreshInit</code> hook and shifts <code>window.scrollY</code> upward so <em>The Highlight</em> does not overlap you.</p>
-        <button type="button" class="button" id="collapsible-toggle-btn" aria-expanded="false" onclick="toggleArchivalDrawer()">Read more (+900px archival notes)</button>
+        <p class="demo-lab__eyebrow">Finding 04 (Interactive Demo) — Collapsible Content Scroll Anchoring</p>
+        <h4>Why native CSS <code>overflow-anchor</code> fails inside a pinned section</h4>
+        <p>When you reach the bottom of a section to click "Show less" on an accordion, GSAP has already pinned that section (<code>position: fixed</code>) and locked an inline <code>height</code> on its <code>.pin-spacer</code>. Because the inline height is locked when the content collapses, native browser Scroll Anchoring never fires; and when <code>ScrollTrigger.refresh()</code> runs, GSAP restores the pre-collapse scroll position — stranding you inside the next section.</p>
+        <p><strong>Try it live:</strong> Expand the notes below, scroll to the bottom of the expanded notes until Section 03 peeks in, and click <strong>Show less</strong>. <code>StackedScroll</code> uses <code>ScrollTrigger</code>'s <code>refreshInit</code> and <code>refresh</code> events to measure the <code>.pin-spacer</code> height delta and shift <code>window.scrollY</code> upward automatically:</p>
+        <button type="button" class="button" id="collapsible-toggle-btn" aria-expanded="false" onclick="toggleArchivalDrawer()">Read more (+900px technical notes)</button>
         <div class="collapsible-drawer" id="archival-drawer">
           <div class="collapsible-drawer__block">
-            <h4>Archival Note A — Why native <code>overflow-anchor</code> fails under pin</h4>
-            <p>Browser scroll anchoring only triggers when layout shifts above the viewport inside normal document flow. Once a section reaches <code>start: "bottom bottom"</code>, GSAP sets <code>position: fixed</code> and locks the <code>.pin-spacer</code> height.</p>
+            <h4>Step 1 — <code>ScrollTrigger.addEventListener('refreshInit', ...)</code></h4>
+            <p>Before GSAP unpins any DOM nodes to re-measure the page, <code>StackedScroll</code> snapshots each section's live height from <code>(section.closest('.pin-spacer') || section).offsetHeight</code> alongside the pre-refresh <code>window.scrollY</code>.</p>
           </div>
           <div class="collapsible-drawer__block">
-            <h4>Archival Note B — How <code>ScrollTrigger. refreshInit</code> solves it</h4>
-            <p>Before <code>ScrollTrigger.refresh()</code> unpins the DOM to re-measure, StackedScroll records each section's live <code>.pin-spacer</code> height. When the refresh completes, it compares the new natural height against the old one and clamps <code>window.scrollY</code> by the exact collapsed delta.</p>
+            <h4>Step 2 — Stateless delta calculation on <code>refresh</code></h4>
+            <p>When GSAP finishes unpinning and re-measuring natural heights, if a section shrank (<code>newHeight &lt; oldHeight</code>) while the user was inside its pinned region, <code>StackedScroll</code> shifts <code>window.scrollY</code> upward by the exact collapsed delta.</p>
           </div>
           <div class="collapsible-drawer__block">
-            <h4>Archival Note C — Now test collapsing from right here at the bottom!</h4>
-            <p>Scroll until you see the next section ("The Highlight") just starting to peek in at the bottom of your screen, then click the button below. Notice how you stay cleanly anchored at the bottom of <em>The Long Read</em> instead of getting stranded inside <em>The Highlight</em>:</p>
+            <h4>Step 3 — Collapse from right here at the bottom!</h4>
+            <p>Scroll down until Section 03 ("Short Panel Handoff") begins sliding over this box, then click the button below — you will stay cleanly anchored at the bottom of Section 02:</p>
             <button type="button" class="button" id="collapsible-close-bottom-btn" onclick="toggleArchivalDrawer()">Show less &amp; call scroller.refresh()</button>
           </div>
+        </div>
+      </div>
+      <p class="lead">Keep scrolling down to reach the bottom of Section 02 and watch Section 03 slide up over this page.</p>
+      <p>Notice that until you reach the very bottom of this section, only the translucent <code>.header</code> was sticky — the rest of the section scrolled naturally. The instant this final paragraph reaches the bottom of the viewport, <code>ScrollTrigger</code> pins the entire section in place.</p>
+    </main>
+  </section>
+
+  <!-- 03 — Short Panel Handoff (shorter than viewport content, pins immediately at top) -->
+  <section class="panel" id="highlight">
+    <header class="header">
+      <div class="header__bar">
+        <a class="header__brand" href="#cover" onclick="event.preventDefault(); scroller.scrollTo('cover')">watsturen<span class="header__brand-dot">.</span></a>
+        <span class="header__title">03 — Short Panel Handoff</span>
+        <span class="header__kicker">Short section · start: "top top"</span>
+        <button class="mobile-nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+      </div>
+      <nav class="mobile-nav" aria-label="Section navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">01 — Overview</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">02 — The 6 Findings</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">03 — Short Panel Handoff</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">04 — Interactive Sandbox</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">05 — Install &amp; Open Source</span>
+      </nav>
+    </header>
+    <main class="main">
+      <div class="callout">
+        <span class="section-label">Finding 05 — Short Sections &amp; Synthetic Settle Buffers</span>
+        <h2>Immediate pin at <code>start: "top top"</code></h2>
+        <p class="lead">This section's content fits on a single screen, so it pins the instant its header reaches the top of the viewport — while Section 04 slides up (or across) to cover it.</p>
+        <p>When two short sections appear back-to-back, they don't provide enough natural scroll distance for the first pin to release before the second engages. <code>StackedScroll</code> automatically injects and reuses a synthetic <code>.stacked-scroll-buffer</code> element between consecutive short sections so their pin windows never overlap.</p>
+        <div class="demo-toolbar__row" style="margin-top: 1rem;">
+          <a href="#gallery" class="button" onclick="event.preventDefault(); scroller.scrollTo('gallery')">Continue to Interactive Sandbox &darr;</a>
+          <a href="#contact" class="button button--outline" onclick="event.preventDefault(); scroller.scrollTo('contact')">Jump to Final Section</a>
         </div>
       </div>
     </main>
   </section>
 
-  <section class="panel short" id="highlight">
-    <header class="header">
-      <div class="header__bar">
-        <span class="header__title">The Highlight</span>
-        <span class="header__kicker">Short section</span>
-        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
-      </div>
-      <nav class="mobile-nav" aria-label="Navigation">
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
-      </nav>
-    </header>
-    <main class="main">
-      <h2>Short section</h2>
-      <p class="lead">This panel's content is shorter than the viewport, so it pins immediately at the top. The next section will slide up over it as soon as you scroll.</p>
-      <div class="rule"></div>
-      <p>Use the nav to jump away and back — the landing position is computed from each panel's natural height, not its live pinned offset.</p>
-      <p><em>The Gallery section is tall enough to continue scrolling. Adjacent short panels are handled automatically with a synthetic settle buffer.</em></p>
-      <a href="#gallery" class="button" onclick="event.preventDefault(); scroller.scrollTo('gallery')">Next: Gallery</a>
-    </main>
-  </section>
-
+  <!-- 04 — Interactive Sandbox (tall section: Fullscreen Guard, Touch-Swipe Ignore, CSS Checklist) -->
   <section class="panel" id="gallery">
     <header class="header">
       <div class="header__bar">
-        <span class="header__title">The Gallery</span>
-        <span class="header__kicker">Another tall section</span>
-        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+        <a class="header__brand" href="#cover" onclick="event.preventDefault(); scroller.scrollTo('cover')">watsturen<span class="header__brand-dot">.</span></a>
+        <span class="header__title">04 — Interactive Sandbox</span>
+        <span class="header__kicker">Tall section · Fullscreen &amp; Observer</span>
+        <button class="mobile-nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
       </div>
-      <nav class="mobile-nav" aria-label="Navigation">
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
+      <nav class="mobile-nav" aria-label="Section navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">01 — Overview</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">02 — The 6 Findings</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">03 — Short Panel Handoff</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">04 — Interactive Sandbox</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">05 — Install &amp; Open Source</span>
       </nav>
     </header>
     <main class="main">
-      <h2>Visual rhythm</h2>
-      <p class="lead">Mixing tall and short panels gives editorial rhythm without breaking the physics of the scroll. Tall panels are read; short panels are seen.</p>
-      <div class="rule"></div>
-      <p>Because the spacer is sized generically against the last panel, reordering sections does not require code changes. The demo deliberately places a short panel last to prove the spacer fix.</p>
-      <div class="gallery-grid">
-        <figure>Plate 01</figure>
-        <figure>Plate 02</figure>
-        <figure>Plate 03</figure>
-        <figure>Plate 04</figure>
-        <figure>Plate 05</figure>
-        <figure>Plate 06</figure>
-        <figure>Plate 07</figure>
-        <figure>Plate 08</figure>
-      </div>
+      <span class="section-label">Live GSAP Feature Playground</span>
+      <h2>Fullscreen Protection, Observer Touch-Swipe &amp; CSS Rules</h2>
+      <p class="lead">Test the interactive sandboxes below, then scroll through the 8-card CSS &amp; GSAP integration checklist to reach the final section.</p>
 
       <div class="demo-lab" id="lab-fullscreen">
-        <p class="demo-lab__eyebrow">Interactive Feature 03 — Fullscreen &amp; Orientation-Rotation Guard</p>
+        <p class="demo-lab__eyebrow">Finding 06 (Interactive Demo) — Fullscreen Video &amp; Orientation-Rotation Guard</p>
         <h4>Keep fullscreen video &amp; <code>&lt;iframe&gt;</code> embeds alive across resizes</h4>
-        <p>Normally, calling <code>ScrollTrigger.refresh()</code> (or rotating a phone, which triggers GSAP's internal <code>matchMedia</code> listener) temporarily unwraps and re-parents every pinned DOM node — immediately exiting browser fullscreen and reloading any child <code>&lt;iframe&gt;</code>. StackedScroll wraps each trigger's <code>revert()</code> and <code>refresh()</code> while fullscreen (or <code>setFullscreenGuard(true)</code>) is active.</p>
+        <p>Normally, calling <code>ScrollTrigger.refresh()</code> (or rotating a phone, which triggers GSAP's internal <code>matchMedia("(orientation: portrait)")</code> listener) temporarily unwraps and re-parents every pinned DOM node — immediately exiting browser fullscreen and reloading any child YouTube/Vimeo <code>&lt;iframe&gt;</code>. <code>StackedScroll</code> wraps each trigger's <code>revert()</code> and <code>refresh()</code> while fullscreen (or <code>setFullscreenGuard(true)</code>) is active.</p>
         <div class="fullscreen-stage" id="fullscreen-stage">
-          <strong>Embedded Media / Live State Sandbox</strong>
+          <strong>Embedded Theater / Live DOM State Sandbox</strong>
           <div class="fullscreen-stage__metrics">
             <span class="fullscreen-stage__badge">Guard state: <strong id="fs-guard-status">Inactive</strong></span>
-            <span class="fullscreen-stage__badge">DOM detach count: <strong id="fs-detach-count">0</strong></span>
+            <span class="fullscreen-stage__badge">DOM detach count (while guarded): <strong id="fs-detach-count">0</strong></span>
             <span class="fullscreen-stage__badge">Refreshes survived: <strong id="fs-refresh-survived">0</strong></span>
           </div>
-          <div>
+          <div class="demo-toolbar__row">
             <button type="button" class="button" id="fs-pseudo-btn" onclick="togglePseudoFullscreen()">Toggle iOS / CSS Fullscreen Guard</button>
-            <button type="button" class="button" id="fs-native-btn" onclick="toggleNativeFullscreen()">Request Native Fullscreen</button>
-            <button type="button" class="button" id="fs-test-refresh-btn" onclick="testProtectedRefresh()">Simulate Resize / Refresh Now</button>
+            <button type="button" class="button button--outline" id="fs-native-btn" onclick="toggleNativeFullscreen()">Request Native Fullscreen</button>
+            <button type="button" class="button button--outline" id="fs-test-refresh-btn" onclick="testProtectedRefresh()">Simulate Resize / Refresh Now</button>
           </div>
         </div>
       </div>
 
       <div class="demo-lab" id="lab-swipe-ignore">
-        <p class="demo-lab__eyebrow">Interactive Feature 04 — Horizontal Touch-Swipe Ignore Zone</p>
-        <h4><code>swipeIgnoreSelector: '[data-swipe-ignore]'</code></h4>
-        <p>When using <code>from-right</code> or <code>from-left</code> transitions on a touch device, GSAP's <code>ScrollTrigger.observe()</code> lets users drag horizontally to turn pages — while ignoring horizontal carousels or code blocks matching <code>swipeIgnoreSelector</code>:</p>
+        <p class="demo-lab__eyebrow">Interactive Demo — GSAP Observer Touch-Swipe &amp; Ignore Zone</p>
+        <h4><code>ScrollTrigger.observe()</code> + <code>swipeIgnoreSelector: '[data-swipe-ignore]'</code></h4>
+        <p>When <code>transition</code> is set to <code>'from-right'</code> or <code>'from-left'</code>, incoming sections lock to <code>position: fixed; top: 0; left: 0</code> during the handoff and support horizontal touch-swipe via <code>ScrollTrigger.observe()</code>. Elements matching <code>swipeIgnoreSelector</code> allow normal horizontal panning without triggering a page turn:</p>
         <div class="swipe-ignore-strip" data-swipe-ignore>
-          <div class="swipe-ignore-card"><strong>Slide 01</strong><br>Drag horizontally inside this strip on touch devices.</div>
-          <div class="swipe-ignore-card"><strong>Slide 02</strong><br><code>ScrollTrigger.observe()</code> ignores touches inside <code>[data-swipe-ignore]</code>.</div>
-          <div class="swipe-ignore-card"><strong>Slide 03</strong><br>Your carousel scrolls smoothly without turning the page.</div>
-          <div class="swipe-ignore-card"><strong>Slide 04</strong><br>Swipe outside this strip at a section edge to turn the page.</div>
+          <div class="swipe-ignore-card"><strong>Gallery Strip 01</strong><br>Drag horizontally inside this strip on touch devices.</div>
+          <div class="swipe-ignore-card"><strong>Gallery Strip 02</strong><br><code>ScrollTrigger.observe()</code> ignores touches inside <code>[data-swipe-ignore]</code>.</div>
+          <div class="swipe-ignore-card"><strong>Gallery Strip 03</strong><br>Axis locking (<code>lockAxis: true</code>) and velocity flicks (<code>350px/s</code>).</div>
+          <div class="swipe-ignore-card"><strong>Gallery Strip 04</strong><br>Swipe outside this strip at a section boundary to turn the page.</div>
         </div>
+      </div>
+
+      <div class="gallery-grid">
+        <figure><strong>Rule 01 — No position: relative</strong>Never set global <code>position: relative</code> or <code>z-index</code> on <code>.panel</code> elements; let GSAP manage pinning coordinates.</figure>
+        <figure><strong>Rule 02 — Sticky Headers</strong>Give each section's <code>.header</code> <code>position: sticky; top: 0; z-index: 10</code> (translucent <code>backdrop-filter: blur(20px)</code> works out of the box).</figure>
+        <figure><strong>Rule 03 — Opaque Panel Floor</strong>Use <code>min-height: 100dvh</code> and an opaque base background on <code>.panel</code> so incoming pages completely cover pinned ones.</figure>
+        <figure><strong>Rule 04 — overflow-x: clip</strong>Clip horizontal overflow with <code>overflow-x: clip</code> rather than <code>overflow: hidden</code> so <code>position: sticky</code> never breaks.</figure>
+        <figure><strong>Rule 05 — Mobile URL Bar</strong><code>ScrollTrigger.config({ ignoreMobileResize: true })</code> + <code>visualViewport</code> updates keep mobile scroll rock-solid.</figure>
+        <figure><strong>Rule 06 — Reduced Motion</strong>Automatically respects <code>prefers-reduced-motion: reduce</code> by disabling horizontal transforms and smooth scroll jumps.</figure>
+        <figure><strong>Rule 07 — Stateless refresh()</strong>Call <code>scroller.refresh()</code> after accordions, tabs, or lazy images resize a section.</figure>
+        <figure><strong>Rule 08 — Clean Teardown</strong>Call <code>scroller.destroy()</code> in SPA route unmounts to remove all triggers, spacers, buffers, and listeners.</figure>
       </div>
     </main>
   </section>
 
-  <section class="panel short" id="contact">
+  <!-- 05 — Short Final Section (shorter than viewport content, requires end-spacer & pin-end clamping) -->
+  <section class="panel" id="contact">
     <header class="header">
       <div class="header__bar">
-        <span class="header__title">Contact</span>
-        <span class="header__kicker">Last short section</span>
-        <button class="mobile-nav-toggle" aria-label="Open navigation" aria-expanded="false">&#9776;</button>
+        <a class="header__brand" href="#cover" onclick="event.preventDefault(); scroller.scrollTo('cover')">watsturen<span class="header__brand-dot">.</span></a>
+        <span class="header__title">05 — Install &amp; Open Source</span>
+        <span class="header__kicker">Shorter than viewport · End-Spacer &amp; Pin-Clamp</span>
+        <button class="mobile-nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
       </div>
-      <nav class="mobile-nav" aria-label="Navigation">
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">Cover</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">Long Read</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">Highlight</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">Gallery</span>
-        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">Contact</span>
+      <nav class="mobile-nav" aria-label="Section navigation">
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'cover')">01 — Overview</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'longread')">02 — The 6 Findings</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'highlight')">03 — Short Panel Handoff</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'gallery')">04 — Interactive Sandbox</span>
+        <span class="mobile-nav-item" onclick="mobileNavTo(this, 'contact')">05 — Install &amp; Open Source</span>
       </nav>
     </header>
     <main class="main">
-      <h2>Flush top</h2>
-      <p class="lead">Because this last panel's content is shorter than the viewport, the browser cannot scroll it to the top on its own.</p>
-      <div class="rule"></div>
-      <p>StackedScroll adds an invisible spacer at the end of the document, sized to exactly the missing height. Try resizing your browser — the spacer recalculates on every resize.</p>
-      <p><em>Final transition: when the previous panel reaches the end of its pinned range, it releases cleanly so the Contact header cannot overlap it.</em></p>
-      <a href="#cover" class="button" onclick="event.preventDefault(); scroller.scrollTo('cover')">Back to top (deep link)</a>
+      <span class="section-label">Open Source · MIT License · watsturen.nl</span>
+      <h2>Get started with <code>stacked-scroll</code></h2>
+      <p>Because this final section's natural content is shorter than the viewport, <code>StackedScroll</code> manages an invisible end-spacer and clamps Section 04's pin end to <code>ScrollTrigger.maxScroll(window) - 1</code> so this header always lands flush at the top.</p>
+      <pre><code>npm install stacked-scroll gsap</code></pre>
+      <div class="demo-toolbar__row" style="margin-top: 0.75rem;">
+        <a href="#cover" class="button" onclick="event.preventDefault(); scroller.scrollTo('cover')">Back to top (deep link)</a>
+        <a href="https://github.com/dvdgiesen/stacked-scroll" target="_blank" rel="noopener" class="button button--outline">GitHub Repo</a>
+        <a href="https://www.npmjs.com/package/stacked-scroll" target="_blank" rel="noopener" class="button button--outline">npm Package</a>
+        <a href="https://watsturen.nl" target="_blank" rel="noopener" class="button button--outline">watsturen.nl</a>
+        <a href="https://rotyounges.com" target="_blank" rel="noopener" class="button button--outline">rotyounges.com</a>
+      </div>
     </main>
   </section>
 
   <!-- Floating Interactive Demo Inspector -->
   <aside class="demo-toolbar" id="demo-toolbar" aria-label="Interactive feature controls">
     <div class="demo-toolbar__header">
-      <span>StackedScroll Live Controls</span>
+      <span>watsturen. · StackedScroll Controls</span>
       <button type="button" class="demo-toolbar__toggle" id="demo-toolbar-collapse" onclick="toggleDemoToolbar()">Hide</button>
     </div>
     <div class="demo-toolbar__body">
@@ -787,68 +908,42 @@
       </div>
       <div class="demo-toolbar__row">
         <span class="demo-toolbar__label">Jump:</span>
-        <button type="button" class="demo-chip" onclick="scroller.scrollTo('cover')">Cover</button>
-        <button type="button" class="demo-chip" onclick="scroller.scrollTo('longread', { offsetElement: '#lab-collapsible' })">Accordion</button>
-        <button type="button" class="demo-chip" onclick="scroller.scrollTo('gallery', { offsetElement: '#lab-fullscreen' })">Fullscreen</button>
-        <button type="button" class="demo-chip" onclick="scroller.scrollTo('contact')">Last Panel</button>
-      </div>
-      <div class="demo-toolbar__row">
-        <a class="demo-chip" href="https://github.com/dvdgiesen/stacked-scroll" target="_blank" rel="noopener">GitHub</a>
-        <a class="demo-chip" href="https://www.npmjs.com/package/stacked-scroll" target="_blank" rel="noopener">npm</a>
-        <a class="demo-chip" href="https://rotyounges.com" target="_blank" rel="noopener">rotyounges.com</a>
+        <button type="button" class="demo-chip" onclick="scroller.scrollTo('cover')">01 Cover</button>
+        <button type="button" class="demo-chip" onclick="scroller.scrollTo('longread', { offsetElement: '#lab-collapsible' })">02 Accordion</button>
+        <button type="button" class="demo-chip" onclick="scroller.scrollTo('highlight')">03 Short</button>
+        <button type="button" class="demo-chip" onclick="scroller.scrollTo('gallery', { offsetElement: '#lab-fullscreen' })">04 Sandbox</button>
+        <button type="button" class="demo-chip" onclick="scroller.scrollTo('contact')">05 Install</button>
       </div>
     </div>
   </aside>
 
-  <script>
-    (function loadDemoScripts() {
-      function loadWithFallback(urls, onDone) {
-        let idx = 0;
-        function next() {
-          if (idx >= urls.length) return onDone();
-          const s = document.createElement('script');
-          s.src = urls[idx++];
-          s.onload = onDone;
-          s.onerror = next;
-          document.head.appendChild(s);
-        }
-        next();
-      }
-
-      loadWithFallback(
-        ['../node_modules/gsap/dist/gsap.min.js', './vendor/gsap.min.js', '../vendor/gsap.min.js'],
-        function () {
-          loadWithFallback(
-            ['../node_modules/gsap/dist/ScrollTrigger.min.js', './vendor/ScrollTrigger.min.js', '../vendor/ScrollTrigger.min.js'],
-            function () {
-              loadWithFallback(
-                ['../dist/stacked-scroll.umd.cjs', './dist/stacked-scroll.umd.cjs'],
-                function () {}
-              );
-            }
-          );
-        }
-      );
-    })();
-  </script>
+  <script src="../node_modules/gsap/dist/gsap.min.js"></script>
+  <script src="../node_modules/gsap/dist/ScrollTrigger.min.js"></script>
+  <script src="../dist/stacked-scroll.umd.cjs"></script>
   <script>
     function initScroller() {
       if (typeof window.gsap === 'undefined' || typeof window.ScrollTrigger === 'undefined' || typeof window.StackedScroll === 'undefined') {
         setTimeout(initScroller, 50);
         return;
       }
-      window.scroller = new StackedScroll({
-        sections: '.panel',
-        headerSelector: '.header',
-        mainSelector: '.main',
-        swipeIgnoreSelector: '[data-swipe-ignore]'
-      }).init();
-      if (typeof window._initDemoControls === 'function') {
-        window._initDemoControls();
+      const start = () => {
+        window.scroller = new StackedScroll({
+          sections: '.panel',
+          headerSelector: '.header',
+          mainSelector: '.main',
+          swipeIgnoreSelector: '[data-swipe-ignore]'
+        }).init();
+
+        if (typeof window._initDemoControls === 'function') {
+          window._initDemoControls();
+        }
+      };
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(start, start);
+      } else {
+        start();
       }
 
-      // RotYounges-style mobile hamburger navigation. Each section header gets
-      // its own toggle/dropdown. Shown on all screen sizes per the demo brief.
       (function () {
         function closeAllMobileNavs() {
           document.querySelectorAll('.mobile-nav.is-open').forEach(nav => {
@@ -861,11 +956,7 @@
           });
         }
 
-        // Resolves once all CSS transitions on an element have finished (next frame so
-        // the browser has already queued the transition after a class change).
         function waitForTransitions(el) {
-          // Force a synchronous style flush so any CSS transition triggered by a
-          // preceding class change is immediately visible to el.getAnimations().
           void el.offsetHeight;
           return new Promise((resolve) => {
             requestAnimationFrame(() => {
@@ -898,8 +989,6 @@
             if (!isOpen) {
               nav.classList.add('is-open');
               btn.setAttribute('aria-expanded', 'true');
-              // Re-measure once the expand transition actually finishes so the
-              // expanded header is accounted for in pin spacers and the end spacer.
               waitForTransitions(nav).then(() => {
                 if (nav.classList.contains('is-open')) {
                   refreshScroller();
@@ -918,11 +1007,9 @@
           const openNavs = Array.from(document.querySelectorAll('.mobile-nav.is-open'));
           closeAllMobileNavs();
 
-          // Wait for the collapse transition(s) to finish, then refresh geometry.
           await Promise.all(openNavs.map(waitForTransitions));
           refreshScroller();
 
-          // Give the refreshed layout one paint to settle, then smooth-scroll.
           requestAnimationFrame(() => {
             if (window.scroller && typeof window.scroller.scrollTo === 'function') {
               window.scroller.scrollTo(target);
@@ -931,7 +1018,6 @@
         };
       })();
     }
-
     window._initDemoControls = function () {
       window.setDemoTransition = function (mode) {
         if (!window.scroller) return;
@@ -941,8 +1027,7 @@
         });
         document.querySelectorAll('[data-transition-btn]').forEach((el) => {
           const active = el.getAttribute('data-transition-btn') === mode;
-          el.style.background = active ? 'var(--rule)' : '';
-          el.style.color = active ? 'var(--paper)' : '';
+          el.classList.toggle('button--outline', !active);
         });
       };
       window.setDemoTransition('bottom-up');
@@ -974,7 +1059,7 @@
         btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         btn.textContent = expanded
           ? 'Show less (collapse & anchor scroll)'
-          : 'Read more (+900px archival notes)';
+          : 'Read more (+900px technical notes)';
         if (window.scroller) {
           window.scroller.refresh();
         }
