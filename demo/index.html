@@ -350,6 +350,52 @@
       color: inherit;
       padding: 0;
     }
+
+    a {
+      color: var(--color-primary);
+      font-weight: 600;
+      text-decoration: underline;
+      text-decoration-color: var(--color-primary-border);
+      text-underline-offset: 3px;
+      transition: color 150ms ease, text-decoration-color 150ms ease;
+    }
+
+    a:hover {
+      color: var(--color-accent);
+      text-decoration-color: var(--color-accent);
+    }
+
+    .jump-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+      margin: 0.5rem 0 1.25rem;
+    }
+
+    .jump-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.32rem 0.75rem;
+      background: var(--color-surface);
+      color: var(--color-primary);
+      border: 1px solid var(--color-primary-border);
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: var(--shadow-sm);
+      transition: all 150ms ease;
+    }
+
+    .jump-link:hover {
+      background: var(--color-primary-faint);
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      transform: translateY(-1px);
+    }
+
     .button {
       display: inline-flex;
       align-items: center;
@@ -712,11 +758,12 @@
       <span class="section-label">Architecture &amp; Production Edge Cases</span>
       <h2>Why a naive 6-line ScrollTrigger loop breaks in production</h2>
       <p class="lead">Notice how this section's translucent <code>watsturen.</code> header stays pinned at the top while you read. Only when you reach the bottom of this section does GSAP freeze the entire section so Section 03 can slide over it.</p>
-      <p>Jump straight to a mid-section finding using <code>scrollTo(section, { offsetElement })</code>:
-        <a href="#article-02" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-02' })">Finding 02 — pinSpacing: false</a> &middot;
-        <a href="#article-03" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-03' })">Finding 03 — The offsetParent trap</a> &middot;
-        <a href="#lab-collapsible" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#lab-collapsible' })">Finding 04 — Collapsible content anchoring</a>
-      </p>
+      <p>Jump straight to a mid-section finding using <code>scrollTo(section, { offsetElement })</code>:</p>
+      <div class="jump-bar">
+        <a class="jump-link" href="#article-02" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-02' })">Finding 02 — pinSpacing: false &darr;</a>
+        <a class="jump-link" href="#article-03" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-03' })">Finding 03 — The offsetParent trap &darr;</a>
+        <a class="jump-link" href="#lab-collapsible" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#lab-collapsible' })">Finding 04 — Collapsible content anchoring &darr;</a>
+      </div>
 
       <h3 id="article-01">Finding 01 — Two-Phase Sticky + Pin Choreography (Tall vs. Short Panels)</h3>
       <p>Plain CSS <code>position: sticky</code> can keep a header visible while its section scrolls, but it cannot hold a finished section in place while the next section slides over it. <code>StackedScroll</code> pairs CSS sticky headers with height-aware GSAP <code>ScrollTrigger</code> start rules:</p>
