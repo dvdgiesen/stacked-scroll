@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Horizontal page-turn transition modes (`transition: 'bottom-up' | 'from-right' | 'from-left'`) and runtime `setTransition(mode)` API.
+- Idiomatic GSAP `ScrollTrigger.observe()` (`Observer` plugin) integration for horizontal touch-swipe page turns (`touchSwipe: true` by default) with axis locking, flick velocity completion, and `swipeIgnoreSelector` filtering for nested horizontal carousels/code blocks.
+- Automatic scroll anchoring when collapsible content ("read more / show less" accordions) shrinks inside a pinned section, using `ScrollTrigger`'s `refreshInit` and `refresh` lifecycle events to measure `.pin-spacer` height deltas and shift `window.scrollY`.
+- Interactive feature playground in `demo/index.html` with live transition mode switcher, compact header toggle, collapsible archival drawer demo, fullscreen guard sandbox, and `swipeIgnoreSelector` carousel strip.
+- Automated GitHub Pages deployment workflow (`.github/workflows/pages.yml`) publishing the live interactive demo to `https://dvdgiesen.github.io/stacked-scroll/`.
+- GSAP Showcase & Community Forum promotion guide in `docs/gsap-promotion.md`.
+
 ## [1.1.0] - 2026-11-11
 
 ### Added

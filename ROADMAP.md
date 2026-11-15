@@ -27,11 +27,11 @@ solid. Kept in the original priority order.
 ### Tier 1 — Foundation (must do)
 
 1. **GitHub**
-   - [ ] Add README badges: npm version, CI status, license.
-   - [ ] Set GitHub repo About / topics.
-   - [ ] Enable GitHub Pages for the demo (or link to watsturen.nl).
+   - [x] Add README badges: npm version, CI status, license, GSAP peer dependency.
+   - [x] Set GitHub repo About / topics (`gh repo edit`).
+   - [x] Enable GitHub Pages for the demo (`.github/workflows/pages.yml` -> `https://dvdgiesen.github.io/stacked-scroll/`).
 2. **npm**
-   - [ ] Confirm README, description, and keywords reflect the current tagline.
+   - [x] Confirm README, description, and keywords reflect the current tagline and all core features.
    - [ ] Add a screenshot or GIF of the effect to the README (helps npm page).
 3. **watsturen.nl portfolio page**
    - [ ] Live demo embed.

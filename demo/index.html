@@ -322,6 +322,222 @@
       }
     }
 
+    /* Compact mode preview (when html.stacked-scroll-compact is active) */
+    html.stacked-scroll-compact .header__bar {
+      min-height: 2.35rem;
+      padding: 0 1rem;
+      font-size: 0.7rem;
+    }
+
+    html.stacked-scroll-compact .header__kicker {
+      display: none;
+    }
+
+    /* Interactive Demo Control Bar (fixed bottom-right pill) */
+    .demo-toolbar {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      background: var(--paper);
+      color: var(--ink);
+      border: 2px solid var(--rule);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.75rem;
+      max-width: calc(100vw - 2rem);
+    }
+
+    .demo-toolbar__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.45rem 0.75rem;
+      background: var(--ink);
+      color: var(--paper);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      font-size: 0.7rem;
+    }
+
+    .demo-toolbar__toggle {
+      background: none;
+      border: 1px solid rgba(247, 245, 240, 0.4);
+      color: var(--paper);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.15rem 0.45rem;
+      cursor: pointer;
+    }
+
+    .demo-toolbar__body {
+      padding: 0.65rem 0.75rem;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .demo-toolbar.is-collapsed .demo-toolbar__body {
+      display: none;
+    }
+
+    .demo-toolbar__row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .demo-toolbar__label {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 0.68rem;
+      margin-right: 0.25rem;
+    }
+
+    .demo-chip {
+      appearance: none;
+      background: var(--paper);
+      color: var(--ink);
+      border: 1px solid var(--rule);
+      padding: 0.28rem 0.55rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .demo-chip:hover {
+      background: rgba(26, 26, 26, 0.08);
+    }
+
+    .demo-chip.is-active {
+      background: var(--accent);
+      color: var(--paper);
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* Interactive Demo Lab Cards inside sections */
+    .demo-lab {
+      margin: 2rem 0;
+      padding: 1.25rem 1.5rem;
+      border: 2px solid var(--rule);
+      background: rgba(26, 26, 26, 0.03);
+    }
+
+    .demo-lab__eyebrow {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin: 0 0 0.35rem;
+    }
+
+    .demo-lab h4 {
+      margin: 0 0 0.5rem;
+      font-size: 1.25rem;
+    }
+
+    .demo-lab p {
+      font-size: 0.98rem;
+      margin: 0 0 0.85rem;
+    }
+
+    /* Collapsible drawer demo */
+    .collapsible-drawer {
+      display: none;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px dashed rgba(26, 26, 26, 0.35);
+    }
+
+    .collapsible-drawer.is-expanded {
+      display: block;
+    }
+
+    .collapsible-drawer__block {
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      background: var(--paper);
+      border: 1px solid rgba(26, 26, 26, 0.18);
+    }
+
+    /* Horizontal swipe-ignore strip */
+    .swipe-ignore-strip {
+      display: flex;
+      gap: 0.85rem;
+      overflow-x: auto;
+      padding: 0.85rem 0.25rem;
+      margin: 0.75rem 0;
+      border-top: 1px solid rgba(26, 26, 26, 0.2);
+      border-bottom: 1px solid rgba(26, 26, 26, 0.2);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .swipe-ignore-card {
+      flex: 0 0 210px;
+      padding: 0.85rem;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.8rem;
+    }
+
+    /* Fullscreen test box */
+    .fullscreen-stage {
+      margin-top: 0.85rem;
+      padding: 1.25rem;
+      background: #141414;
+      color: #f7f5f0;
+      border: 2px solid var(--rule);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .fullscreen-stage.is-pseudo-fullscreen {
+      position: fixed;
+      inset: 1.5rem;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.78);
+    }
+
+    .fullscreen-stage__metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin: 0.75rem 0 1rem;
+      font-size: 0.82rem;
+    }
+
+    .fullscreen-stage__badge {
+      padding: 0.25rem 0.55rem;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .fullscreen-stage .button {
+      background: #f7f5f0;
+      color: #141414;
+      border-color: #f7f5f0;
+      margin-bottom: 0.35rem;
+    }
+
+    .fullscreen-stage .button:hover {
+      background: var(--accent);
+      color: #f7f5f0;
+      border-color: var(--accent);
+    }
+
   </style>
 </head>
 <body>
@@ -347,13 +563,26 @@
       </div>
       <p class="lead">Scroll down. Each section behaves like a page in a stack of papers: read through the content while the header stays pinned, then the next page slides up to take its place.</p>
       <div class="rule"></div>
-      <p>This demo uses <strong>StackedScroll</strong>, a tiny GSAP ScrollTrigger wrapper extracted from rotyounges.com. It solves the edge cases that break every naive implementation:</p>
+      <p>This demo uses <strong>StackedScroll</strong>, an idiomatic <strong>GSAP 3.13+ (<code>ScrollTrigger</code> + <code>Observer</code>)</strong> library extracted from <a href="https://rotyounges.com" target="_blank" rel="noopener">rotyounges.com</a>. Every core feature and production edge-case fix is interactive on this page:</p>
       <ul class="features">
-        <li><strong>Deep links</strong> — the robust <code>scrollTo()</code> calculation never walks the <code>offsetParent</code> chain, so pinned sections cannot corrupt the target position, whether you are linking to a section top or an element halfway down the page.</li>
-        <li><strong>Short last panel</strong> — an invisible spacer guarantees the final section can scroll flush to the top, even when its content is shorter than the viewport.</li>
-        <li><strong>Final transition</strong> — the previous panel's pin ends cleanly at the last transition, so headers never overlap.</li>
-        <li><strong>Adjacent short panels</strong> — two short panels in a row now hand off cleanly thanks to a synthetic settle buffer, so you do not have to author around them.</li>
+        <li><strong>Two-phase GSAP pinning</strong> — tall sections scroll naturally underneath a sticky header first and pin at <code>start: "bottom bottom"</code>; short sections pin immediately at <code>start: "top top"</code> with <code>pinSpacing: false</code>.</li>
+        <li><strong>3 transition modes + Touch-Swipe</strong> — switch live between <code>bottom-up</code> (vertical stack), <code>from-right</code> (newspaper page turn), and <code>from-left</code> (card swipe) powered by <code>ScrollTrigger.observe()</code> with velocity &amp; axis locking.</li>
+        <li><strong>Deep links under pin</strong> — <code>scrollTo()</code> avoids the <code>offsetTop</code>/<code>offsetParent</code> and <code>getBoundingClientRect()</code> traps caused by <code>position: fixed</code> pinned sections.</li>
+        <li><strong>Collapsible content anchoring</strong> — collapsing an accordion or "show less" block inside a pinned section automatically anchors <code>window.scrollY</code> via <code>ScrollTrigger</code> lifecycle hooks so the next section never overlaps.</li>
+        <li><strong>Fullscreen &amp; rotation guard</strong> — prevents <code>ScrollTrigger.refresh()</code> and device rotation from detaching pinned DOM nodes, keeping fullscreen video and <code>&lt;iframe&gt;</code> embeds alive.</li>
+        <li><strong>Short last panel &amp; final handoff</strong> — an automatic end-spacer lets a short final section scroll flush to the top, while pin-end clamping guarantees the previous header always releases cleanly.</li>
+        <li><strong>Adjacent short panels &amp; compact mode</strong> — synthetic settle buffers prevent consecutive short panels from overlapping pin windows, and <code>hideHeadersBelow</code> collapses headers on short viewports.</li>
       </ul>
+      <div class="demo-lab" id="lab-transitions">
+        <p class="demo-lab__eyebrow">Interactive Feature 01 — Page Handoff Direction &amp; GSAP Observer Touch-Swipe</p>
+        <h4>Try switching transition directions live</h4>
+        <p>By default, incoming sections slide vertically up from below (<code>bottom-up</code>). Switch to <strong>From Right</strong> or <strong>From Left</strong> and scroll down (or swipe horizontally on touch screens at any section boundary) to see horizontal page turns in action:</p>
+        <div class="demo-toolbar__row" role="group" aria-label="Page transition mode">
+          <button type="button" class="button" data-transition-btn="bottom-up" onclick="setDemoTransition('bottom-up')">Bottom-Up (Default)</button>
+          <button type="button" class="button" data-transition-btn="from-right" onclick="setDemoTransition('from-right')">From-Right (Newspaper Turn)</button>
+          <button type="button" class="button" data-transition-btn="from-left" onclick="setDemoTransition('from-left')">From-Left (Card Swipe)</button>
+        </div>
+      </div>
       <a href="#longread" class="button" onclick="event.preventDefault(); scroller.scrollTo('longread')">Start reading</a>
     </main>
   </section>
@@ -408,6 +637,28 @@
       <div class="rule"></div>
       <p class="lead">Try it: open the ☰ menu and tap <strong>Gallery</strong> — that is a deep link to a section top.</p>
       <p>Or jump straight to a mid-section element: <a href="#article-02" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-02' })">02 — pinSpacing: false</a>, <a href="#article-03" onclick="event.preventDefault(); scroller.scrollTo('longread', { offsetElement: '#article-03' })">03 — The offsetParent trap</a>. The same `scrollTo()` calculation lands on the element, not just the section top, as long as there is enough content below it to scroll there.</p>
+
+      <div class="demo-lab" id="lab-collapsible">
+        <p class="demo-lab__eyebrow">Interactive Feature 02 — Collapsible Content Scroll Anchoring</p>
+        <h4>"Read more / Show less" inside a pinned section</h4>
+        <p>When you reach the bottom of a tall section, GSAP pins it (<code>position: fixed</code>) and locks an inline height on its <code>.pin-spacer</code>, which disables native browser CSS Scroll Anchoring. Expand the archival notes below, scroll to the bottom of the expanded notes so this section pins, and click <strong>Show less</strong> — <code>scroller.refresh()</code> reads the pre-refresh height via <code>ScrollTrigger</code>'s <code>refreshInit</code> hook and shifts <code>window.scrollY</code> upward so <em>The Highlight</em> does not overlap you.</p>
+        <button type="button" class="button" id="collapsible-toggle-btn" aria-expanded="false" onclick="toggleArchivalDrawer()">Read more (+900px archival notes)</button>
+        <div class="collapsible-drawer" id="archival-drawer">
+          <div class="collapsible-drawer__block">
+            <h4>Archival Note A — Why native <code>overflow-anchor</code> fails under pin</h4>
+            <p>Browser scroll anchoring only triggers when layout shifts above the viewport inside normal document flow. Once a section reaches <code>start: "bottom bottom"</code>, GSAP sets <code>position: fixed</code> and locks the <code>.pin-spacer</code> height.</p>
+          </div>
+          <div class="collapsible-drawer__block">
+            <h4>Archival Note B — How <code>ScrollTrigger. refreshInit</code> solves it</h4>
+            <p>Before <code>ScrollTrigger.refresh()</code> unpins the DOM to re-measure, StackedScroll records each section's live <code>.pin-spacer</code> height. When the refresh completes, it compares the new natural height against the old one and clamps <code>window.scrollY</code> by the exact collapsed delta.</p>
+          </div>
+          <div class="collapsible-drawer__block">
+            <h4>Archival Note C — Now test collapsing from right here at the bottom!</h4>
+            <p>Scroll until you see the next section ("The Highlight") just starting to peek in at the bottom of your screen, then click the button below. Notice how you stay cleanly anchored at the bottom of <em>The Long Read</em> instead of getting stranded inside <em>The Highlight</em>:</p>
+            <button type="button" class="button" id="collapsible-close-bottom-btn" onclick="toggleArchivalDrawer()">Show less &amp; call scroller.refresh()</button>
+          </div>
+        </div>
+      </div>
     </main>
   </section>
 
@@ -466,6 +717,37 @@
         <figure>Plate 07</figure>
         <figure>Plate 08</figure>
       </div>
+
+      <div class="demo-lab" id="lab-fullscreen">
+        <p class="demo-lab__eyebrow">Interactive Feature 03 — Fullscreen &amp; Orientation-Rotation Guard</p>
+        <h4>Keep fullscreen video &amp; <code>&lt;iframe&gt;</code> embeds alive across resizes</h4>
+        <p>Normally, calling <code>ScrollTrigger.refresh()</code> (or rotating a phone, which triggers GSAP's internal <code>matchMedia</code> listener) temporarily unwraps and re-parents every pinned DOM node — immediately exiting browser fullscreen and reloading any child <code>&lt;iframe&gt;</code>. StackedScroll wraps each trigger's <code>revert()</code> and <code>refresh()</code> while fullscreen (or <code>setFullscreenGuard(true)</code>) is active.</p>
+        <div class="fullscreen-stage" id="fullscreen-stage">
+          <strong>Embedded Media / Live State Sandbox</strong>
+          <div class="fullscreen-stage__metrics">
+            <span class="fullscreen-stage__badge">Guard state: <strong id="fs-guard-status">Inactive</strong></span>
+            <span class="fullscreen-stage__badge">DOM detach count: <strong id="fs-detach-count">0</strong></span>
+            <span class="fullscreen-stage__badge">Refreshes survived: <strong id="fs-refresh-survived">0</strong></span>
+          </div>
+          <div>
+            <button type="button" class="button" id="fs-pseudo-btn" onclick="togglePseudoFullscreen()">Toggle iOS / CSS Fullscreen Guard</button>
+            <button type="button" class="button" id="fs-native-btn" onclick="toggleNativeFullscreen()">Request Native Fullscreen</button>
+            <button type="button" class="button" id="fs-test-refresh-btn" onclick="testProtectedRefresh()">Simulate Resize / Refresh Now</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-lab" id="lab-swipe-ignore">
+        <p class="demo-lab__eyebrow">Interactive Feature 04 — Horizontal Touch-Swipe Ignore Zone</p>
+        <h4><code>swipeIgnoreSelector: '[data-swipe-ignore]'</code></h4>
+        <p>When using <code>from-right</code> or <code>from-left</code> transitions on a touch device, GSAP's <code>ScrollTrigger.observe()</code> lets users drag horizontally to turn pages — while ignoring horizontal carousels or code blocks matching <code>swipeIgnoreSelector</code>:</p>
+        <div class="swipe-ignore-strip" data-swipe-ignore>
+          <div class="swipe-ignore-card"><strong>Slide 01</strong><br>Drag horizontally inside this strip on touch devices.</div>
+          <div class="swipe-ignore-card"><strong>Slide 02</strong><br><code>ScrollTrigger.observe()</code> ignores touches inside <code>[data-swipe-ignore]</code>.</div>
+          <div class="swipe-ignore-card"><strong>Slide 03</strong><br>Your carousel scrolls smoothly without turning the page.</div>
+          <div class="swipe-ignore-card"><strong>Slide 04</strong><br>Swipe outside this strip at a section edge to turn the page.</div>
+        </div>
+      </div>
     </main>
   </section>
 
@@ -494,9 +776,69 @@
     </main>
   </section>
 
-  <script src="/node_modules/gsap/dist/gsap.min.js"></script>
-  <script src="/node_modules/gsap/dist/ScrollTrigger.min.js"></script>
-  <script src="../dist/stacked-scroll.umd.cjs"></script>
+  <!-- Floating Interactive Demo Inspector -->
+  <aside class="demo-toolbar" id="demo-toolbar" aria-label="Interactive feature controls">
+    <div class="demo-toolbar__header">
+      <span>StackedScroll Live Controls</span>
+      <button type="button" class="demo-toolbar__toggle" id="demo-toolbar-collapse" onclick="toggleDemoToolbar()">Hide</button>
+    </div>
+    <div class="demo-toolbar__body">
+      <div class="demo-toolbar__row">
+        <span class="demo-toolbar__label">Transition:</span>
+        <button type="button" class="demo-chip is-active" data-transition-chip="bottom-up" onclick="setDemoTransition('bottom-up')">Bottom-Up</button>
+        <button type="button" class="demo-chip" data-transition-chip="from-right" onclick="setDemoTransition('from-right')">From-Right</button>
+        <button type="button" class="demo-chip" data-transition-chip="from-left" onclick="setDemoTransition('from-left')">From-Left</button>
+      </div>
+      <div class="demo-toolbar__row">
+        <span class="demo-toolbar__label">Headers:</span>
+        <button type="button" class="demo-chip" id="compact-toggle-chip" onclick="toggleCompactModePreview()">Compact Headers: Off</button>
+      </div>
+      <div class="demo-toolbar__row">
+        <span class="demo-toolbar__label">Jump:</span>
+        <button type="button" class="demo-chip" onclick="scroller.scrollTo('cover')">Cover</button>
+        <button type="button" class="demo-chip" onclick="scroller.scrollTo('longread', { offsetElement: '#lab-collapsible' })">Accordion</button>
+        <button type="button" class="demo-chip" onclick="scroller.scrollTo('gallery', { offsetElement: '#lab-fullscreen' })">Fullscreen</button>
+        <button type="button" class="demo-chip" onclick="scroller.scrollTo('contact')">Last Panel</button>
+      </div>
+      <div class="demo-toolbar__row">
+        <a class="demo-chip" href="https://github.com/dvdgiesen/stacked-scroll" target="_blank" rel="noopener">GitHub</a>
+        <a class="demo-chip" href="https://www.npmjs.com/package/stacked-scroll" target="_blank" rel="noopener">npm</a>
+        <a class="demo-chip" href="https://rotyounges.com" target="_blank" rel="noopener">rotyounges.com</a>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    (function loadDemoScripts() {
+      function loadWithFallback(urls, onDone) {
+        let idx = 0;
+        function next() {
+          if (idx >= urls.length) return onDone();
+          const s = document.createElement('script');
+          s.src = urls[idx++];
+          s.onload = onDone;
+          s.onerror = next;
+          document.head.appendChild(s);
+        }
+        next();
+      }
+
+      loadWithFallback(
+        ['../node_modules/gsap/dist/gsap.min.js', './vendor/gsap.min.js', '../vendor/gsap.min.js'],
+        function () {
+          loadWithFallback(
+            ['../node_modules/gsap/dist/ScrollTrigger.min.js', './vendor/ScrollTrigger.min.js', '../vendor/ScrollTrigger.min.js'],
+            function () {
+              loadWithFallback(
+                ['../dist/stacked-scroll.umd.cjs', './dist/stacked-scroll.umd.cjs'],
+                function () {}
+              );
+            }
+          );
+        }
+      );
+    })();
+  </script>
   <script>
     function initScroller() {
       if (typeof window.gsap === 'undefined' || typeof window.ScrollTrigger === 'undefined' || typeof window.StackedScroll === 'undefined') {
@@ -506,8 +848,12 @@
       window.scroller = new StackedScroll({
         sections: '.panel',
         headerSelector: '.header',
-        mainSelector: '.main'
+        mainSelector: '.main',
+        swipeIgnoreSelector: '[data-swipe-ignore]'
       }).init();
+      if (typeof window._initDemoControls === 'function') {
+        window._initDemoControls();
+      }
 
       // RotYounges-style mobile hamburger navigation. Each section header gets
       // its own toggle/dropdown. Shown on all screen sizes per the demo brief.
@@ -585,6 +931,127 @@
         };
       })();
     }
+
+    window._initDemoControls = function () {
+      window.setDemoTransition = function (mode) {
+        if (!window.scroller) return;
+        window.scroller.setTransition(mode);
+        document.querySelectorAll('[data-transition-chip]').forEach((el) => {
+          el.classList.toggle('is-active', el.getAttribute('data-transition-chip') === mode);
+        });
+        document.querySelectorAll('[data-transition-btn]').forEach((el) => {
+          const active = el.getAttribute('data-transition-btn') === mode;
+          el.style.background = active ? 'var(--rule)' : '';
+          el.style.color = active ? 'var(--paper)' : '';
+        });
+      };
+      window.setDemoTransition('bottom-up');
+
+      window.toggleCompactModePreview = function () {
+        const root = document.documentElement;
+        const active = root.classList.toggle('stacked-scroll-compact');
+        const chip = document.getElementById('compact-toggle-chip');
+        if (chip) {
+          chip.classList.toggle('is-active', active);
+          chip.textContent = active ? 'Compact Headers: On' : 'Compact Headers: Off';
+        }
+        if (window.scroller) window.scroller.refresh();
+      };
+
+      window.toggleDemoToolbar = function () {
+        const bar = document.getElementById('demo-toolbar');
+        const btn = document.getElementById('demo-toolbar-collapse');
+        if (!bar || !btn) return;
+        const collapsed = bar.classList.toggle('is-collapsed');
+        btn.textContent = collapsed ? 'Show' : 'Hide';
+      };
+
+      window.toggleArchivalDrawer = function () {
+        const drawer = document.getElementById('archival-drawer');
+        const btn = document.getElementById('collapsible-toggle-btn');
+        if (!drawer || !btn) return;
+        const expanded = drawer.classList.toggle('is-expanded');
+        btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        btn.textContent = expanded
+          ? 'Show less (collapse & anchor scroll)'
+          : 'Read more (+900px archival notes)';
+        if (window.scroller) {
+          window.scroller.refresh();
+        }
+      };
+
+      const stage = document.getElementById('fullscreen-stage');
+      const statusEl = document.getElementById('fs-guard-status');
+      const detachEl = document.getElementById('fs-detach-count');
+      const survivedEl = document.getElementById('fs-refresh-survived');
+      const pseudoBtn = document.getElementById('fs-pseudo-btn');
+      const gallerySection = document.getElementById('gallery');
+      if (stage && gallerySection) {
+        let detachCount = 0;
+        let survivedCount = 0;
+        let pseudoActive = false;
+
+        const observer = new MutationObserver((records) => {
+          const nativeActive = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+          if (!pseudoActive && !nativeActive) return;
+          for (const rec of records) {
+            rec.removedNodes.forEach((node) => {
+              if (node === gallerySection || (node.contains && node.contains(gallerySection))) {
+                detachCount++;
+                if (detachEl) detachEl.textContent = String(detachCount);
+              }
+            });
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        function syncSandboxUI() {
+          const nativeActive = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+          const guarded = pseudoActive || nativeActive;
+          if (statusEl) {
+            statusEl.textContent = guarded
+              ? (nativeActive ? 'Active (Native Fullscreen)' : 'Active (iOS/CSS Guard)')
+              : 'Inactive';
+          }
+          if (pseudoBtn) {
+            pseudoBtn.textContent = pseudoActive
+              ? 'Exit iOS / CSS Fullscreen Guard'
+              : 'Toggle iOS / CSS Fullscreen Guard';
+          }
+        }
+
+        window.togglePseudoFullscreen = function () {
+          pseudoActive = !pseudoActive;
+          stage.classList.toggle('is-pseudo-fullscreen', pseudoActive);
+          if (window.scroller) {
+            window.scroller.setFullscreenGuard(pseudoActive);
+          }
+          syncSandboxUI();
+        };
+
+        window.toggleNativeFullscreen = function () {
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          } else if (stage.requestFullscreen) {
+            stage.requestFullscreen().catch(() => {});
+          }
+        };
+
+        window.testProtectedRefresh = function () {
+          const beforeDetach = detachCount;
+          if (window.scroller) {
+            window.scroller.refresh();
+          }
+          if (detachCount === beforeDetach) {
+            survivedCount++;
+            if (survivedEl) survivedEl.textContent = String(survivedCount);
+          }
+          syncSandboxUI();
+        };
+
+        document.addEventListener('fullscreenchange', syncSandboxUI);
+      }
+    };
     initScroller();
   </script>
 </body>

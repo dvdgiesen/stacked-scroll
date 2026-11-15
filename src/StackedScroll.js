@@ -37,14 +37,22 @@ export class StackedScroll {
       scrollBehavior: options.scrollBehavior ?? 'smooth',
       hideHeadersBelow: options.hideHeadersBelow ?? null,
       compactClassName: options.compactClassName ?? 'stacked-scroll-compact',
-      protectFullscreen: options.protectFullscreen ?? true
+      protectFullscreen: options.protectFullscreen ?? true,
+      transition: options.transition ?? 'bottom-up',
+      touchSwipe: options.touchSwipe ?? true,
+      swipeIgnoreSelector: options.swipeIgnoreSelector ?? null
     };
 
     this.sections = [];
     this.triggers = [];
     this.buffers = new Map();
     this.spacer = null;
+    this.styleEl = null;
     this.resizeTimer = null;
+    this._cachedViewportHeight = typeof window !== 'undefined' ? this._getViewportHeight() : 0;
+    this._touchObserver = null;
+    this._preRefreshHeights = [];
+    this._isAnchoringShrink = false;
 
     this._fullscreenGuard = {
       manualActive: false,
@@ -62,8 +70,12 @@ export class StackedScroll {
     this._onOrientationChange = this._handleOrientationChange.bind(this);
     this._onVisualViewportResize = this._handleVisualViewportResize.bind(this);
     this._onFullscreenChange = this._handleFullscreenChange.bind(this);
+    this._onScroll = this._updatePageTransitions.bind(this);
+    this._onRefreshInit = this._handleRefreshInit.bind(this);
+    this._onRefreshDone = this._handleRefreshDone.bind(this);
 
     gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true });
   }
 
   /**
@@ -79,15 +91,19 @@ export class StackedScroll {
     }
 
     this._ensureSpacer();
+    this._ensureStyles();
+    this._applyTransitionClass(this.config.transition);
 
     // Apply compact-state class, settle buffers, and spacer sizing BEFORE
     // creating triggers so initial pin `start`/`end` calculations see the
     // true section heights and document scrollHeight.
+    this._cachedViewportHeight = this._getViewportHeight();
     this._updateCompactState();
     this._insertBuffers();
     this._updateSpacer();
     this._createTriggers();
     this._attachListeners();
+    this._updatePageTransitions();
 
     this._lastViewportWidth = window.innerWidth;
 
@@ -134,6 +150,17 @@ export class StackedScroll {
 
   /**
    * Refresh all cached ScrollTrigger measurements, settle buffers, and spacer sizing.
+   *
+   * Also handles collapsible content ("read more / show less", accordions, tabs)
+   * inside a pinned section: while a section is pinned (`position: fixed`), GSAP
+   * locks an inline `height` on both the section and its `.pin-spacer`, which
+   * prevents native browser Scroll Anchoring (`overflow-anchor`) from adjusting
+   * `window.scrollY` when content collapses. We read each section's pre-refresh
+   * height directly from its `.pin-spacer` in the DOM, and after `ScrollTrigger.refresh()`
+   * unpins and re-measures the section, shift `window.scrollY` upward by the
+   * collapsed height delta if the user would otherwise be stranded inside the
+   * next section's overlap window.
+   *
    * No-ops while fullscreen protection is active so pinned DOM nodes (and child
    * iframes/videos) are never detached during fullscreen playback.
    */
@@ -143,6 +170,22 @@ export class StackedScroll {
     this._updateCompactState();
     this._updateSpacer();
     ScrollTrigger.refresh();
+    this._updatePageTransitions();
+  }
+
+  /**
+   * Change the page transition mode at runtime ('bottom-up' | 'from-right' | 'from-left').
+   * @param {'bottom-up' | 'from-right' | 'from-left'} mode
+   */
+  setTransition(mode) {
+    const valid = ['bottom-up', 'from-right', 'from-left'];
+    if (!valid.includes(mode)) {
+      console.warn(`StackedScroll.setTransition: unknown mode "${mode}". Expected one of: ${valid.join(', ')}`);
+      return;
+    }
+    this.config.transition = mode;
+    this._applyTransitionClass(mode);
+    this.refresh();
   }
 
   /**
@@ -167,8 +210,16 @@ export class StackedScroll {
     window.removeEventListener('load', this._onLoad);
     window.removeEventListener('resize', this._onResize);
     window.removeEventListener('orientationchange', this._onOrientationChange);
+    window.removeEventListener('scroll', this._onScroll);
     document.removeEventListener('fullscreenchange', this._onFullscreenChange);
     document.removeEventListener('webkitfullscreenchange', this._onFullscreenChange);
+    ScrollTrigger.removeEventListener('refreshInit', this._onRefreshInit);
+    ScrollTrigger.removeEventListener('refresh', this._onRefreshDone);
+
+    if (this._touchObserver) {
+      this._touchObserver.kill();
+      this._touchObserver = null;
+    }
 
     if (window.visualViewport) {
       window.visualViewport.removeEventListener('resize', this._onVisualViewportResize);
@@ -180,6 +231,8 @@ export class StackedScroll {
     this._fullscreenGuard.manualActive = false;
     this._fullscreenGuard.wasActive = false;
 
+    this._clearAllPageTransitions();
+
     this.triggers.forEach((trigger) => trigger.kill());
     this.triggers = [];
 
@@ -188,9 +241,21 @@ export class StackedScroll {
       this.spacer = null;
     }
 
+    if (this.styleEl) {
+      this.styleEl.remove();
+      this.styleEl = null;
+    }
+
     this._removeBuffers();
 
-    document.documentElement.classList.remove(this.config.compactClassName);
+    const root = document.documentElement;
+    root.classList.remove(
+      this.config.compactClassName,
+      'page-transition-bottom-up',
+      'page-transition-from-right',
+      'page-transition-from-left'
+    );
+    delete root.dataset.pageTransition;
 
     this.sections = [];
   }
@@ -282,7 +347,9 @@ export class StackedScroll {
         start: () => this._computeStart(section),
         end: () => this._computeEnd(section),
         pin: true,
-        pinSpacing: false
+        pinSpacing: false,
+        onUpdate: () => this._updatePageTransitions(),
+        onToggle: () => this._updatePageTransitions()
       });
 
       // Wrap revert() and refresh() on every trigger instance so that while
@@ -330,7 +397,7 @@ export class StackedScroll {
     // past it and the previous panel stays `position: fixed` forever, covering
     // the final section. Clamp the end just before max scroll so the handoff
     // can always complete.
-    const maxScroll = document.documentElement.scrollHeight - this._getViewportHeight();
+    const maxScroll = ScrollTrigger.maxScroll(window);
     return Math.min(nextTop, Math.max(maxScroll - 1, 0));
   }
 
@@ -366,12 +433,17 @@ export class StackedScroll {
     window.addEventListener('load', this._onLoad);
     window.addEventListener('resize', this._onResize);
     window.addEventListener('orientationchange', this._onOrientationChange);
+    window.addEventListener('scroll', this._onScroll, { passive: true });
     document.addEventListener('fullscreenchange', this._onFullscreenChange);
     document.addEventListener('webkitfullscreenchange', this._onFullscreenChange);
+    ScrollTrigger.addEventListener('refreshInit', this._onRefreshInit);
+    ScrollTrigger.addEventListener('refresh', this._onRefreshDone);
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', this._onVisualViewportResize);
     }
+
+    this._setupTouchObserver();
   }
 
   _isFullscreenProtected() {
@@ -535,5 +607,315 @@ export class StackedScroll {
     const targetHeader = section.querySelector(this.config.headerSelector);
     const firstHeader = this.sections[0]?.querySelector(this.config.headerSelector);
     return targetHeader?.offsetHeight ?? firstHeader?.offsetHeight ?? 0;
+  }
+
+  _ensureStyles() {
+    if (this.styleEl || typeof document === 'undefined') return;
+    const secSel = this._sectionsSelectorString();
+    const hdrSel = this.config.headerSelector;
+    this.styleEl = document.createElement('style');
+    this.styleEl.id = 'stacked-scroll-runtime-styles';
+    this.styleEl.textContent = `
+      html.page-transition-from-right,
+      html.page-transition-from-left {
+        overflow-x: hidden;
+      }
+      html.page-transition-from-right body,
+      html.page-transition-from-left body {
+        overflow-x: clip;
+      }
+      .pin-spacer {
+        pointer-events: none;
+      }
+      ${secSel} {
+        pointer-events: auto;
+      }
+      ${secSel} img {
+        -webkit-user-drag: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      ${secSel}.is-page-turning {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        will-change: transform;
+      }
+      ${secSel}.is-page-turning > ${hdrSel} {
+        position: relative !important;
+        top: auto !important;
+      }
+      ${secSel}.is-page-turning::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 24px;
+        opacity: var(--page-turn-shadow-opacity, 1);
+        pointer-events: none;
+        z-index: 20;
+      }
+      html.page-transition-from-right ${secSel}.is-page-turning::before {
+        left: -24px;
+        background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.22));
+      }
+      html.page-transition-from-left ${secSel}.is-page-turning::before {
+        right: -24px;
+        background: linear-gradient(to left, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.22));
+      }
+      html.page-transition-from-right ${hdrSel}::before,
+      html.page-transition-from-left ${hdrSel}::before {
+        display: none;
+      }
+    `;
+    document.head.appendChild(this.styleEl);
+  }
+
+  _applyTransitionClass(mode) {
+    const root = document.documentElement;
+    ['bottom-up', 'from-right', 'from-left'].forEach((m) => {
+      root.classList.remove(`page-transition-${m}`);
+    });
+    root.classList.add(`page-transition-${mode}`);
+    root.dataset.pageTransition = mode;
+  }
+
+  _anchorScrollAfterSectionShrink(oldHeights) {
+    const viewportHeight = this._getViewportHeight();
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    let cumulativeTop = 0;
+
+    for (let i = 0; i < this.sections.length; i++) {
+      const newHeight = this.sections[i].offsetHeight;
+      const oldHeight = oldHeights[i];
+
+      if (typeof oldHeight === 'number' && newHeight < oldHeight) {
+        const oldPinStart = Math.max(cumulativeTop, cumulativeTop + oldHeight - viewportHeight);
+        const newPinStart = Math.max(cumulativeTop, cumulativeTop + newHeight - viewportHeight);
+
+        if (scrollY > newPinStart && scrollY <= oldPinStart + viewportHeight) {
+          const delta = oldHeight - newHeight;
+          const anchoredY = Math.max(cumulativeTop, Math.min(scrollY - delta, newPinStart));
+          window.scrollTo({ top: anchoredY, behavior: 'instant' });
+          return true;
+        }
+      }
+
+      cumulativeTop += newHeight;
+      const buffer = this.buffers.get(i);
+      if (buffer) cumulativeTop += buffer.offsetHeight;
+    }
+
+    return false;
+  }
+
+  _getTransitionWindow(idx) {
+    const viewportHeight = this._cachedViewportHeight || this._getViewportHeight();
+    const prevTrigger = this.triggers[idx - 1];
+    const nextTop = this._cumulativeHeightTo(idx - 1);
+    const endScroll = (prevTrigger && typeof prevTrigger.end === 'number' && prevTrigger.end > 0)
+      ? prevTrigger.end
+      : this._computeEnd(this.sections[idx - 1]);
+    const startScroll = Math.max(0, nextTop - viewportHeight);
+    return {
+      startScroll,
+      endScroll,
+      transitionDistance: endScroll - startScroll,
+      prevTrigger
+    };
+  }
+
+  _resetSectionTransitionStyles(section) {
+    section.classList.remove('is-page-turning');
+    section.style.removeProperty('--page-turn-shadow-opacity');
+    section.style.transform = '';
+  }
+
+  _clearAllPageTransitions() {
+    for (let i = 1; i < this.sections.length; i++) {
+      this._resetSectionTransitionStyles(this.sections[i]);
+    }
+  }
+
+  _updatePageTransitions() {
+    if (this.config.transition === 'bottom-up' || this._prefersReducedMotion()) {
+      this._clearAllPageTransitions();
+      return;
+    }
+
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const directionSign = this.config.transition === 'from-left' ? -1 : 1;
+
+    for (let idx = 1; idx < this.sections.length; idx++) {
+      const section = this.sections[idx];
+      const { startScroll, endScroll, transitionDistance, prevTrigger } = this._getTransitionWindow(idx);
+
+      if (transitionDistance <= 0) {
+        this._resetSectionTransitionStyles(section);
+        continue;
+      }
+
+      if (scrollY <= startScroll) {
+        section.classList.remove('is-page-turning');
+        section.style.removeProperty('--page-turn-shadow-opacity');
+        section.style.transform = `translate3d(${directionSign * 100}%, 0px, 0px)`;
+        continue;
+      }
+
+      if (scrollY < endScroll) {
+        const progress = gsap.utils.clamp(0, 1, (scrollY - startScroll) / transitionDistance);
+        const translateX = directionSign * (1 - progress) * 100;
+        const shadowOpacity = Math.min(1, progress * 8, (1 - progress) * 8);
+
+        section.classList.add('is-page-turning');
+        section.style.setProperty('--page-turn-shadow-opacity', shadowOpacity.toFixed(3));
+        section.style.transform = `translate3d(${translateX.toFixed(3)}%, 0px, 0px)`;
+        continue;
+      }
+
+      section.classList.remove('is-page-turning');
+      section.style.removeProperty('--page-turn-shadow-opacity');
+
+      if (prevTrigger && prevTrigger.isActive) {
+        section.style.transform = 'translate3d(0%, 0px, 0px)';
+      } else {
+        section.style.transform = '';
+      }
+    }
+  }
+
+  _handleRefreshInit() {
+    if (this._isFullscreenProtected()) return;
+    this._cachedViewportHeight = this._getViewportHeight();
+    if (!this._isAnchoringShrink) {
+      this._preRefreshHeights = this.sections.map((s) => (s.closest('.pin-spacer') || s).offsetHeight);
+    }
+    this._clearAllPageTransitions();
+  }
+
+  _handleRefreshDone() {
+    if (this._isFullscreenProtected()) return;
+    if (!this._isAnchoringShrink && this._preRefreshHeights.length > 0) {
+      const heights = this._preRefreshHeights;
+      this._preRefreshHeights = [];
+      if (this._anchorScrollAfterSectionShrink(heights)) {
+        this._isAnchoringShrink = true;
+        this._insertBuffers();
+        this._updateSpacer();
+        ScrollTrigger.refresh();
+        this._isAnchoringShrink = false;
+      }
+    }
+    this._updatePageTransitions();
+  }
+
+  _findTransitionWindowForSwipe(scrollY, swipeSign) {
+    const edgeTolerance = 48;
+    for (let idx = 1; idx < this.sections.length; idx++) {
+      const w = this._getTransitionWindow(idx);
+      if (w.transitionDistance > 0 && scrollY > w.startScroll && scrollY < w.endScroll) {
+        return { ...w, originProgress: (scrollY - w.startScroll) / w.transitionDistance };
+      }
+    }
+    if (swipeSign > 0) {
+      for (let idx = 1; idx < this.sections.length; idx++) {
+        const w = this._getTransitionWindow(idx);
+        if (w.transitionDistance > 0 && Math.abs(scrollY - w.startScroll) <= edgeTolerance) {
+          return { ...w, originProgress: 0 };
+        }
+      }
+    }
+    if (swipeSign < 0) {
+      for (let idx = 1; idx < this.sections.length; idx++) {
+        const w = this._getTransitionWindow(idx);
+        if (w.transitionDistance > 0 && Math.abs(scrollY - w.endScroll) <= edgeTolerance) {
+          return { ...w, originProgress: 1 };
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Uses GSAP's built-in `ScrollTrigger.observe()` (`Observer` plugin bundled
+   * inside `ScrollTrigger`) for cross-browser horizontal touch-swipe detection,
+   * axis locking, `ignore` selector filtering, and swipe velocity tracking.
+   */
+  _setupTouchObserver() {
+    if (this._touchObserver) {
+      this._touchObserver.kill();
+      this._touchObserver = null;
+    }
+    if (!this.config.touchSwipe || typeof ScrollTrigger.observe !== 'function') return;
+
+    let activeWindow = null;
+
+    this._touchObserver = ScrollTrigger.observe({
+      target: window,
+      type: 'touch',
+      lockAxis: true,
+      dragMinimum: 10,
+      ignore: this.config.swipeIgnoreSelector || undefined,
+      onPress: () => {
+        activeWindow = null;
+      },
+      onChangeX: (self) => {
+        if (this.config.transition === 'bottom-up' || this._isFullscreenProtected()) return;
+        const directionSign = this.config.transition === 'from-left' ? -1 : 1;
+
+        if (!activeWindow) {
+          const initialY = window.scrollY || window.pageYOffset || 0;
+          const swipeSign = -directionSign * self.deltaX > 0 ? 1 : -1;
+          const win = this._findTransitionWindowForSwipe(initialY, swipeSign);
+          if (!win) return;
+          activeWindow = {
+            ...win,
+            currentScrollY: gsap.utils.clamp(win.startScroll, win.endScroll, initialY)
+          };
+        }
+
+        if (self.event && self.event.cancelable) {
+          self.event.preventDefault();
+        }
+
+        const deltaProgress = (-directionSign * self.deltaX) / Math.max(1, window.innerWidth);
+        activeWindow.currentScrollY = gsap.utils.clamp(
+          activeWindow.startScroll,
+          activeWindow.endScroll,
+          activeWindow.currentScrollY + deltaProgress * activeWindow.transitionDistance
+        );
+        window.scrollTo({ top: activeWindow.currentScrollY, behavior: 'instant' });
+        this._updatePageTransitions();
+      },
+      onRelease: (self) => {
+        if (!activeWindow) return;
+        const win = activeWindow;
+        activeWindow = null;
+
+        const scrollY = window.scrollY || window.pageYOffset || 0;
+        const progress = gsap.utils.clamp(0, 1, (scrollY - win.startScroll) / win.transitionDistance);
+        const directionSign = this.config.transition === 'from-left' ? -1 : 1;
+        // Observer.velocityX is in pixels/second
+        const advanceVelocityPxPerSec = -directionSign * self.velocityX;
+
+        let completeTurn;
+        if (Math.abs(advanceVelocityPxPerSec) > 350) {
+          completeTurn = advanceVelocityPxPerSec > 0;
+        } else if (win.originProgress <= 0.1) {
+          completeTurn = progress >= 0.22;
+        } else if (win.originProgress >= 0.9) {
+          completeTurn = progress > 0.78;
+        } else {
+          completeTurn = progress >= 0.5;
+        }
+
+        const targetScroll = completeTurn ? win.endScroll : win.startScroll;
+        window.scrollTo({
+          top: targetScroll,
+          behavior: this._prefersReducedMotion() ? 'auto' : this.config.scrollBehavior
+        });
+      }
+    });
   }
 }

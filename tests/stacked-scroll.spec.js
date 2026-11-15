@@ -301,4 +301,122 @@ test.describe('Adjacent short panels regression', () => {
 
     expect(detachedCount).toBe(0);
   });
+
+  test('horizontal transition (from-right) slides incoming panel in at top:0 and pre-stages off-screen', async ({ page }) => {
+    await page.goto('/demo/');
+    await page.waitForLoadState('networkidle');
+    await waitForScroller(page);
+
+    const result = await page.evaluate(() => {
+      window.scroller.setTransition('from-right');
+      const cover = document.getElementById('cover');
+      const longread = document.getElementById('longread');
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // Before transition starts: longread is pre-staged off-screen to the right
+      const preLeft = Math.round(longread.getBoundingClientRect().left);
+
+      // Scroll 50% into cover -> longread handoff
+      const midScroll = cover.offsetHeight - vh * 0.5;
+      window.scrollTo({ top: midScroll, behavior: 'instant' });
+      window.dispatchEvent(new Event('scroll'));
+      const midRect = longread.getBoundingClientRect();
+
+      return {
+        vw,
+        preLeft,
+        midTop: Math.round(midRect.top),
+        midLeft: Math.round(midRect.left),
+        isTurning: longread.classList.contains('is-page-turning')
+      };
+    });
+
+    expect(result.preLeft).toBe(result.vw);
+    expect(result.isTurning).toBe(true);
+    expect(Math.abs(result.midTop)).toBeLessThanOrEqual(TOLERANCE);
+    expect(Math.abs(result.midLeft - result.vw * 0.5)).toBeLessThanOrEqual(TOLERANCE);
+  });
+
+  test('shrinking an expanded section clamps scroll so next section does not overlap', async ({ page }) => {
+    await page.goto('/demo/');
+    await page.waitForLoadState('networkidle');
+    await waitForScroller(page);
+
+    const result = await page.evaluate(() => {
+      const gallery = document.getElementById('gallery');
+      const contact = document.getElementById('contact');
+      const main = gallery.querySelector('.main');
+
+      // Jump to gallery first and record pre-expand scrollY
+      window.scroller.scrollTo('gallery', { behavior: 'auto' });
+      const preExpandY = window.scrollY;
+
+      // Expand gallery by adding a tall collapsible block
+      const extra = document.createElement('div');
+      extra.style.height = '1200px';
+      main.appendChild(extra);
+      window.scroller.refresh();
+
+      // Scroll to the bottom of the expanded gallery
+      const cover = document.getElementById('cover');
+      const longread = document.getElementById('longread');
+      const highlight = document.getElementById('highlight');
+      const galleryTop = cover.offsetHeight + longread.offsetHeight + highlight.offsetHeight;
+      const expandedBottomY = galleryTop + gallery.offsetHeight - window.innerHeight;
+      window.scrollTo({ top: expandedBottomY, behavior: 'instant' });
+
+      // Collapse the block and call stateless refresh()
+      extra.remove();
+      window.scroller.refresh();
+
+      return {
+        preExpandY: Math.round(preExpandY),
+        afterCollapseY: Math.round(window.scrollY),
+        contactTop: Math.round(contact.getBoundingClientRect().top),
+        vh: window.innerHeight
+      };
+    });
+
+    expect(result.contactTop).toBeGreaterThanOrEqual(result.vh - TOLERANCE);
+  });
+
+  test('interactive demo controls: transition switcher, collapsible drawer, and fullscreen guard sandbox work live', async ({ page }) => {
+    await page.goto('/demo/');
+    await page.waitForLoadState('networkidle');
+    await waitForScroller(page);
+
+    // 1. Live transition switcher chip switches mode to from-left
+    await page.click('[data-transition-chip="from-left"]');
+    const mode = await page.evaluate(() => window.scroller.config.transition);
+    expect(mode).toBe('from-left');
+
+    // Switch back to bottom-up
+    await page.click('[data-transition-chip="bottom-up"]');
+
+    // 2. Interactive collapsible archival drawer expands & collapses cleanly
+    await page.click('#collapsible-toggle-btn');
+    const isExpanded = await page.evaluate(() =>
+      document.getElementById('archival-drawer').classList.contains('is-expanded')
+    );
+    expect(isExpanded).toBe(true);
+
+    await page.click('#collapsible-close-bottom-btn');
+    const isCollapsed = await page.evaluate(() =>
+      !document.getElementById('archival-drawer').classList.contains('is-expanded')
+    );
+    expect(isCollapsed).toBe(true);
+
+    // 3. Fullscreen sandbox guard prevents detach during refresh
+    await page.click('#fs-pseudo-btn');
+    await page.click('#fs-test-refresh-btn');
+    const fsStats = await page.evaluate(() => ({
+      status: document.getElementById('fs-guard-status').textContent,
+      detaches: document.getElementById('fs-detach-count').textContent,
+      survived: document.getElementById('fs-refresh-survived').textContent
+    }));
+    expect(fsStats.status).toContain('Active');
+    expect(fsStats.detaches).toBe('0');
+    expect(fsStats.survived).toBe('1');
+  });
 });

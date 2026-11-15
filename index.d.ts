@@ -68,6 +68,32 @@ export interface StackedScrollOptions {
    * @default true
    */
   protectFullscreen?: boolean;
+
+  /**
+   * Direction in which incoming sections enter (and outgoing sections leave)
+   * the viewport during page handoffs.
+   * - `'bottom-up'`: incoming section slides vertically up from below (default).
+   * - `'from-right'`: incoming section slides horizontally in from the right on
+   *   scroll down and exits to the right on scroll up (newspaper page turn).
+   * - `'from-left'`: incoming section slides horizontally in from the left on
+   *   scroll down and exits to the left on scroll up (card swipe).
+   * @default 'bottom-up'
+   */
+  transition?: 'bottom-up' | 'from-right' | 'from-left';
+
+  /**
+   * Enable horizontal touch-swipe dragging to turn pages when `transition` is
+   * `'from-right'` or `'from-left'`.
+   * @default true
+   */
+  touchSwipe?: boolean;
+
+  /**
+   * Optional CSS selector for horizontally interactive elements inside which
+   * horizontal touch-swipe page turns should be ignored.
+   * @default null
+   */
+  swipeIgnoreSelector?: string | null;
 }
 
 export interface ScrollToOptions {
@@ -103,10 +129,17 @@ export declare class StackedScroll {
 
   /**
    * Re-measure all cached geometry (settle buffers, compact state, spacer,
-   * triggers) after dynamic content or layout changes. No-ops while fullscreen
-   * protection is active.
+   * triggers) after dynamic content or layout changes. Automatically anchors
+   * `window.scrollY` when a pinned section shrinks (e.g. collapsing an
+   * accordion or "show less" toggle) so the next section does not overlap it.
+   * No-ops while fullscreen protection is active.
    */
   refresh(): void;
+
+  /**
+   * Change the page transition mode at runtime.
+   */
+  setTransition(mode: 'bottom-up' | 'from-right' | 'from-left'): void;
 
   /**
    * Manually engage or release the fullscreen guard (useful for CSS

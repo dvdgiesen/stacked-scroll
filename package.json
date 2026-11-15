@@ -1,7 +1,7 @@
 {
   "name": "stacked-scroll",
   "version": "1.1.0",
-  "description": "A small, hardened library that turns your sections into a stack of pages: each header stays pinned while you read, then hands off cleanly to the next page as it slides up from below.",
+  "description": "Idiomatic GSAP ScrollTrigger + Observer library that turns sections into a stack of pages with pinned headers, vertical/horizontal page turns, deep-linking, scroll anchoring, and fullscreen guard.",
   "type": "module",
   "main": "./dist/stacked-scroll.umd.cjs",
   "module": "./dist/stacked-scroll.js",
@@ -22,7 +22,7 @@
     "type": "git",
     "url": "git+https://github.com/dvdgiesen/stacked-scroll.git"
   },
-  "homepage": "https://github.com/dvdgiesen/stacked-scroll#readme",
+  "homepage": "https://dvdgiesen.github.io/stacked-scroll/",
   "bugs": "https://github.com/dvdgiesen/stacked-scroll/issues",
   "scripts": {
     "dev": "vite",
@@ -35,12 +35,17 @@
   "keywords": [
     "gsap",
     "scrolltrigger",
+    "gsap-observer",
     "scroll",
     "pin",
     "pinned-sections",
+    "sticky-header",
     "section",
     "stacked-pages",
     "stacked-scroll",
+    "page-turn",
+    "page-transition",
+    "touch-swipe",
     "fullpage",
     "full-page-scroll",
     "scroll-effect",
@@ -52,11 +57,11 @@
   "author": "Dirk van der Giesen <dvdgiesen@yahoo.com>",
   "license": "MIT",
   "peerDependencies": {
-    "gsap": "^3.12.0"
+    "gsap": "^3.13.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
-    "gsap": "^3.12.0",
+    "gsap": "^3.13.0",
     "vite": "^5.0.0"
   }
 }
