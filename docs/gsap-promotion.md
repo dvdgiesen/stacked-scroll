@@ -65,7 +65,8 @@ We recently refactored the entire engine to use **idiomatic GSAP 3.13+ primitive
 2. **Short final section flush-top:** Automatically sizes an invisible end-spacer to `viewportHeight - lastSection.offsetHeight`.
 3. **Final transition pin release:** Clamps non-final pin `end` values to `Math.min(nextTop, ScrollTrigger.maxScroll(window) - 1)` so the second-to-last header always unpins cleanly.
 4. **Adjacent short panels:** Injects and reuses synthetic settle buffers between consecutive short sections.
-5. **Collapsible content ("Show less") inside a pinned section:** Uses `refreshInit` and `refresh` to measure the `.pin-spacer` height delta and shift `window.scrollY` upward so the next section never overlaps.
+5. **Collapsible content ("Show less") inside a pinned section:** Uses `refreshInit` and `refresh` to measure the `.pin-spacer` height delta (snapshotting both `.pin-spacer` heights and `window.scrollY` in `refreshInit` before browser `maxScroll` clamping occurs) and shift `window.scrollY` upward so the next section never overlaps.
 6. **Fullscreen video & `<iframe>` survival on resize/rotate:** Wraps trigger `revert()` and `refresh()` while fullscreen is active so DOM re-parenting never exits fullscreen or reloads embedded iframes.
+7. **Bonus browser gotchas handled / documented:** Automatic `document.fonts.ready` refresh so `font-display: swap` web fonts don't leave `.pin-spacer` heights 10–30px stale, plus `void el.offsetHeight` style-flushing before `el.getAnimations()` when waiting on CSS transitions before calling `ScrollTrigger.refresh()`.
 
-All 6 edge cases + the transition switcher are interactive in the [Live Demo](https://dvdgiesen.github.io/stacked-scroll/). Would love any feedback from the GSAP team and community!
+All edge cases + the transition switcher are interactive in the [Live Demo](https://dvdgiesen.github.io/stacked-scroll/). Would love any feedback from the GSAP team and community!

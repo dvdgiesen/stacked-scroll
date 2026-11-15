@@ -851,8 +851,8 @@
         <figure><strong>Rule 04 — overflow-x: clip</strong>Clip horizontal overflow with <code>overflow-x: clip</code> rather than <code>overflow: hidden</code> so <code>position: sticky</code> never breaks.</figure>
         <figure><strong>Rule 05 — Mobile URL Bar</strong><code>ScrollTrigger.config({ ignoreMobileResize: true })</code> + <code>visualViewport</code> updates keep mobile scroll rock-solid.</figure>
         <figure><strong>Rule 06 — Reduced Motion</strong>Automatically respects <code>prefers-reduced-motion: reduce</code> by disabling horizontal transforms and smooth scroll jumps.</figure>
-        <figure><strong>Rule 07 — Stateless refresh()</strong>Call <code>scroller.refresh()</code> after accordions, tabs, or lazy images resize a section.</figure>
-        <figure><strong>Rule 08 — Clean Teardown</strong>Call <code>scroller.destroy()</code> in SPA route unmounts to remove all triggers, spacers, buffers, and listeners.</figure>
+        <figure><strong>Rule 07 — Web Fonts &amp; Transitions</strong>Auto-refreshes on <code>document.fonts.ready</code> (preventing 10–30px <code>font-display: swap</code> drift); flush <code>void el.offsetHeight</code> before <code>el.getAnimations()</code>.</figure>
+        <figure><strong>Rule 08 — Stateless refresh() &amp; destroy()</strong>Call <code>scroller.refresh()</code> after accordions/tabs resize a section, and <code>scroller.destroy()</code> on SPA unmount.</figure>
       </div>
     </main>
   </section>
