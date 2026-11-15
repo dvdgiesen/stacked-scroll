@@ -52,6 +52,7 @@ export class StackedScroll {
     this._cachedViewportHeight = typeof window !== 'undefined' ? this._getViewportHeight() : 0;
     this._touchObserver = null;
     this._preRefreshHeights = [];
+    this._preRefreshScrollY = 0;
     this._isAnchoringShrink = false;
 
     this._fullscreenGuard = {
@@ -681,9 +682,11 @@ export class StackedScroll {
     root.dataset.pageTransition = mode;
   }
 
-  _anchorScrollAfterSectionShrink(oldHeights) {
+  _anchorScrollAfterSectionShrink(oldHeights, preRefreshScrollY) {
     const viewportHeight = this._getViewportHeight();
-    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const scrollY = typeof preRefreshScrollY === 'number'
+      ? preRefreshScrollY
+      : (window.scrollY || window.pageYOffset || 0);
     let cumulativeTop = 0;
 
     for (let i = 0; i < this.sections.length; i++) {
@@ -790,6 +793,7 @@ export class StackedScroll {
     this._cachedViewportHeight = this._getViewportHeight();
     if (!this._isAnchoringShrink) {
       this._preRefreshHeights = this.sections.map((s) => (s.closest('.pin-spacer') || s).offsetHeight);
+      this._preRefreshScrollY = window.scrollY || window.pageYOffset || 0;
     }
     this._clearAllPageTransitions();
   }
@@ -798,8 +802,9 @@ export class StackedScroll {
     if (this._isFullscreenProtected()) return;
     if (!this._isAnchoringShrink && this._preRefreshHeights.length > 0) {
       const heights = this._preRefreshHeights;
+      const preScrollY = this._preRefreshScrollY;
       this._preRefreshHeights = [];
-      if (this._anchorScrollAfterSectionShrink(heights)) {
+      if (this._anchorScrollAfterSectionShrink(heights, preScrollY)) {
         this._isAnchoringShrink = true;
         this._insertBuffers();
         this._updateSpacer();

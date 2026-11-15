@@ -563,25 +563,17 @@
       </div>
       <p class="lead">Scroll down. Each section behaves like a page in a stack of papers: read through the content while the header stays pinned, then the next page slides up to take its place.</p>
       <div class="rule"></div>
-      <p>This demo uses <strong>StackedScroll</strong>, an idiomatic <strong>GSAP 3.13+ (<code>ScrollTrigger</code> + <code>Observer</code>)</strong> library extracted from <a href="https://rotyounges.com" target="_blank" rel="noopener">rotyounges.com</a>. Every core feature and production edge-case fix is interactive on this page:</p>
+      <p>This demo uses <strong>StackedScroll</strong>, an idiomatic <strong>GSAP 3.13+ (<code>ScrollTrigger</code> + <code>Observer</code>)</strong> library extracted from <a href="https://rotyounges.com" target="_blank" rel="noopener">rotyounges.com</a>. It solves the edge cases that break every naive implementation:</p>
       <ul class="features">
-        <li><strong>Two-phase GSAP pinning</strong> — tall sections scroll naturally underneath a sticky header first and pin at <code>start: "bottom bottom"</code>; short sections pin immediately at <code>start: "top top"</code> with <code>pinSpacing: false</code>.</li>
-        <li><strong>3 transition modes + Touch-Swipe</strong> — switch live between <code>bottom-up</code> (vertical stack), <code>from-right</code> (newspaper page turn), and <code>from-left</code> (card swipe) powered by <code>ScrollTrigger.observe()</code> with velocity &amp; axis locking.</li>
-        <li><strong>Deep links under pin</strong> — <code>scrollTo()</code> avoids the <code>offsetTop</code>/<code>offsetParent</code> and <code>getBoundingClientRect()</code> traps caused by <code>position: fixed</code> pinned sections.</li>
-        <li><strong>Collapsible content anchoring</strong> — collapsing an accordion or "show less" block inside a pinned section automatically anchors <code>window.scrollY</code> via <code>ScrollTrigger</code> lifecycle hooks so the next section never overlaps.</li>
-        <li><strong>Fullscreen &amp; rotation guard</strong> — prevents <code>ScrollTrigger.refresh()</code> and device rotation from detaching pinned DOM nodes, keeping fullscreen video and <code>&lt;iframe&gt;</code> embeds alive.</li>
-        <li><strong>Short last panel &amp; final handoff</strong> — an automatic end-spacer lets a short final section scroll flush to the top, while pin-end clamping guarantees the previous header always releases cleanly.</li>
-        <li><strong>Adjacent short panels &amp; compact mode</strong> — synthetic settle buffers prevent consecutive short panels from overlapping pin windows, and <code>hideHeadersBelow</code> collapses headers on short viewports.</li>
+        <li><strong>Two-phase GSAP pinning &amp; 3 transition modes</strong> — switch live between <code>bottom-up</code>, <code>from-right</code> (newspaper turn), and <code>from-left</code> (card swipe) with <code>ScrollTrigger.observe()</code> touch-swipe.</li>
+        <li><strong>Deep links &amp; collapsible content anchoring</strong> — <code>scrollTo()</code> avoids the <code>offsetParent</code> trap, and collapsing an accordion under a pin automatically anchors <code>window.scrollY</code>.</li>
+        <li><strong>Short last panel &amp; adjacent short buffers</strong> — an automatic end-spacer, pin-end clamping, and synthetic settle buffers keep every section handoff clean.</li>
+        <li><strong>Fullscreen &amp; rotation guard</strong> — prevents <code>ScrollTrigger.refresh()</code> and phone rotation from detaching pinned DOM nodes or reloading <code>&lt;iframe&gt;</code> embeds.</li>
       </ul>
-      <div class="demo-lab" id="lab-transitions">
-        <p class="demo-lab__eyebrow">Interactive Feature 01 — Page Handoff Direction &amp; GSAP Observer Touch-Swipe</p>
-        <h4>Try switching transition directions live</h4>
-        <p>By default, incoming sections slide vertically up from below (<code>bottom-up</code>). Switch to <strong>From Right</strong> or <strong>From Left</strong> and scroll down (or swipe horizontally on touch screens at any section boundary) to see horizontal page turns in action:</p>
-        <div class="demo-toolbar__row" role="group" aria-label="Page transition mode">
-          <button type="button" class="button" data-transition-btn="bottom-up" onclick="setDemoTransition('bottom-up')">Bottom-Up (Default)</button>
-          <button type="button" class="button" data-transition-btn="from-right" onclick="setDemoTransition('from-right')">From-Right (Newspaper Turn)</button>
-          <button type="button" class="button" data-transition-btn="from-left" onclick="setDemoTransition('from-left')">From-Left (Card Swipe)</button>
-        </div>
+      <div class="demo-toolbar__row" role="group" aria-label="Page transition mode" style="margin: 1rem 0 1.25rem;">
+        <button type="button" class="button" data-transition-btn="bottom-up" onclick="setDemoTransition('bottom-up')">Bottom-Up (Default)</button>
+        <button type="button" class="button" data-transition-btn="from-right" onclick="setDemoTransition('from-right')">From-Right (Newspaper Turn)</button>
+        <button type="button" class="button" data-transition-btn="from-left" onclick="setDemoTransition('from-left')">From-Left (Card Swipe)</button>
       </div>
       <a href="#longread" class="button" onclick="event.preventDefault(); scroller.scrollTo('longread')">Start reading</a>
     </main>
@@ -872,8 +864,12 @@
         // Resolves once all CSS transitions on an element have finished (next frame so
         // the browser has already queued the transition after a class change).
         function waitForTransitions(el) {
+          // Force a synchronous style flush so any CSS transition triggered by a
+          // preceding class change is immediately visible to el.getAnimations().
+          void el.offsetHeight;
           return new Promise((resolve) => {
             requestAnimationFrame(() => {
+              void el.offsetHeight;
               const animations = el.getAnimations ? el.getAnimations() : [];
               if (!animations.length) return resolve();
               Promise.all(animations.map((a) => (a.finished ? a.finished.catch(() => {}) : Promise.resolve())))
@@ -904,7 +900,11 @@
               btn.setAttribute('aria-expanded', 'true');
               // Re-measure once the expand transition actually finishes so the
               // expanded header is accounted for in pin spacers and the end spacer.
-              waitForTransitions(nav).then(refreshScroller);
+              waitForTransitions(nav).then(() => {
+                if (nav.classList.contains('is-open')) {
+                  refreshScroller();
+                }
+              });
             }
           });
         });
