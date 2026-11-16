@@ -1,6 +1,6 @@
 {
   "name": "stacked-scroll",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Idiomatic GSAP ScrollTrigger + Observer library that turns sections into a stack of pages with pinned headers, vertical/horizontal page turns, deep-linking, scroll anchoring, and fullscreen guard.",
   "type": "module",
   "main": "./dist/stacked-scroll.umd.cjs",
